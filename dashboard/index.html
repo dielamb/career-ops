@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareerOps — Job Search Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── Design Tokens (ui-ux-pro-max: Modern Dark Cinema) ─── */
+:root {
+  --bg-deep:    #07070A;
+  --bg-base:    #0D0D12;
+  --bg-raised:  #12121A;
+  --bg-overlay: #191924;
+  --surface:    rgba(255,255,255,0.04);
+  --surface-hover: rgba(255,255,255,0.07);
+  --border:     rgba(255,255,255,0.08);
+  --border-focus: rgba(94,106,210,0.6);
+
+  --fg:         #EDEDEF;
+  --fg-muted:   #8A8F98;
+  --fg-subtle:  #55596A;
+
+  --accent:     #5E6AD2;
+  --accent-dim: rgba(94,106,210,0.15);
+  --accent-glow:rgba(94,106,210,0.25);
+
+  --green:      #10B981;
+  --green-dim:  rgba(16,185,129,0.12);
+  --amber:      #F59E0B;
+  --amber-dim:  rgba(245,158,11,0.12);
+  --red:        #EF4444;
+  --red-dim:    rgba(239,68,68,0.12);
+  --gray:       #4B5563;
+  --gray-dim:   rgba(75,85,99,0.15);
+
+  --radius-sm:  6px;
+  --radius:     10px;
+  --radius-lg:  16px;
+  --radius-xl:  22px;
+
+  --ease:       cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-fast:  cubic-bezier(0.4, 0, 0.2, 1);
+
+  --font: 'Inter', -apple-system, sans-serif;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 48px rgba(0,0,0,0.6);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg-deep);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+/* ─── Layout ─── */
+.app { display: grid; grid-template-rows: auto auto 1fr; min-height: 100dvh; }
+
+/* ─── Header ─── */
+.header {
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 56px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+.logo {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.logo-dot {
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.header-stats {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+.stat-pill .num {
+  font-weight: 600;
+  font-size: 13px;
+}
+.stat-pill.apply .num { color: var(--green); }
+.stat-pill.pending .num { color: var(--amber); }
+.stat-pill.done .num { color: var(--accent); }
+
+.btn-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 150ms var(--ease-fast);
+  flex-shrink: 0;
+}
+.btn-add:hover { background: #6B7DE0; transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+.btn-add:active { transform: translateY(0); }
+.btn-add svg { width: 14px; height: 14px; }
+
+/* ─── Toolbar ─── */
+.toolbar {
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+}
+.toolbar-inner {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: 1600px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-subtle);
+  width: 16px; height: 16px;
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  padding: 7px 12px 7px 34px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 150ms;
+}
+.search-input:focus { border-color: var(--border-focus); }
+.search-input::placeholder { color: var(--fg-subtle); }
+
+.filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-btn {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms var(--ease-fast);
+  white-space: nowrap;
+}
+.filter-btn:hover { background: var(--surface-hover); color: var(--fg); }
+.filter-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+.sort-select {
+  padding: 5px 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  font-family: var(--font);
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+.sort-select:focus { border-color: var(--border-focus); color: var(--fg); }
+
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.view-btn {
+  padding: 5px 10px;
+  background: transparent;
+  border: none;
+  color: var(--fg-subtle);
+  cursor: pointer;
+  transition: all 150ms;
+  display: flex;
+  align-items: center;
+}
+.view-btn:hover { background: var(--surface); color: var(--fg-muted); }
+.view-btn.active { background: var(--surface-hover); color: var(--fg); }
+.view-btn svg { width: 15px; height: 15px; }
+
+/* ─── Main Content ─── */
+.main {
+  display: flex;
+  gap: 0;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0;
+  position: relative;
+}
+
+.cards-area {
+  flex: 1;
+  padding: 20px 24px;
+  min-width: 0;
+  transition: padding-right 350ms var(--ease);
+}
+.cards-area.panel-open { padding-right: 24px; }
+
+/* ─── Section header ─── */
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label:first-child { margin-top: 0; }
+.section-label .count {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+/* ─── Card Grid ─── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+}
+
+/* ─── Card ─── */
+.card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 200ms var(--ease);
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+  opacity: 0;
+  transition: opacity 150ms;
+}
+.card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-2px); box-shadow: var(--shadow); }
+.card:hover::before { opacity: 1; }
+.card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
+.card.selected::before { opacity: 1; background: var(--accent-dim); }
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.card-company { font-size: 15px; font-weight: 600; color: var(--fg); }
+.card-role { font-size: 12px; color: var(--fg-muted); margin-top: 2px; line-height: 1.4; }
+
+.score-badge {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 46px; height: 46px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.score-badge .label { font-size: 9px; font-weight: 500; margin-top: 1px; opacity: 0.75; }
+.score-high { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+.score-mid  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+.score-low  { background: var(--gray-dim);  color: var(--fg-muted); border: 1px solid rgba(75,85,99,0.2); }
+.score-bad  { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(239,68,68,0.2); }
+
+.card-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+.chip-location { background: var(--surface); color: var(--fg-muted); border-color: var(--border); }
+.chip-date { background: var(--surface); color: var(--fg-subtle); border-color: var(--border); }
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-evaluated { background: var(--accent-dim); color: var(--accent); }
+.status-applied    { background: rgba(139,92,246,0.15); color: #A78BFA; }
+.status-interview  { background: var(--amber-dim); color: var(--amber); }
+.status-offer      { background: var(--green-dim); color: var(--green); }
+.status-rejected   { background: var(--red-dim); color: var(--red); }
+.status-skip       { background: var(--gray-dim); color: var(--fg-subtle); }
+
+.card-rec {
+  font-size: 12px;
+  color: var(--fg-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.card-rec .rec-icon { font-size: 10px; }
+.rec-apply { color: var(--green); }
+.rec-maybe { color: var(--amber); }
+.rec-skip  { color: var(--fg-subtle); }
+
+.card-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--fg-subtle);
+  border: 1px solid var(--border);
+}
+
+/* ─── Table view ─── */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+}
+thead th {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 12px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+thead th:hover { color: var(--fg-muted); }
+tbody tr {
+  background: var(--bg-raised);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 150ms;
+}
+tbody tr:hover { background: var(--bg-overlay); }
+tbody tr.selected { background: rgba(94,106,210,0.08); outline: 1px solid var(--accent); }
+tbody td { padding: 12px 12px; font-size: 13px; }
+tbody td:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+tbody td:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+.td-company { font-weight: 600; }
+.td-role { color: var(--fg-muted); font-size: 12px; max-width: 260px; }
+.td-score { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ─── Detail Panel ─── */
+.detail-panel {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  transition: width 350ms var(--ease), min-width 350ms var(--ease);
+  border-left: 1px solid transparent;
+  position: sticky;
+  top: 116px;
+  height: calc(100dvh - 116px);
+  align-self: flex-start;
+}
+.detail-panel.open {
+  width: 440px;
+  min-width: 440px;
+  border-left-color: var(--border);
+  overflow-y: auto;
+}
+.panel-inner {
+  width: 440px;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 200ms 100ms var(--ease);
+}
+.detail-panel.open .panel-inner { opacity: 1; }
+
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+.panel-company { font-size: 19px; font-weight: 700; color: var(--fg); }
+.panel-role { font-size: 13px; color: var(--fg-muted); margin-top: 2px; }
+
+.close-btn {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: all 150ms;
+}
+.close-btn:hover { background: var(--surface-hover); color: var(--fg); }
+.close-btn svg { width: 14px; height: 14px; }
+
+.panel-score-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.score-big {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.blocks-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.block-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  gap: 2px;
+}
+.block-label { font-size: 9px; font-weight: 600; color: var(--fg-subtle); text-transform: uppercase; }
+.block-score { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.panel-section { margin-bottom: 16px; }
+.panel-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.panel-section p {
+  font-size: 13px;
+  color: var(--fg-muted);
+  line-height: 1.6;
+}
+.panel-section .highlight {
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--fg-muted);
+  line-height: 1.6;
+}
+.panel-section .highlight.match { border-left: 3px solid var(--green); }
+.panel-section .highlight.gap   { border-left: 3px solid var(--amber); }
+.panel-section .highlight.angle { border-left: 3px solid var(--accent); }
+
+.research-block {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.research-row {
+  display: flex;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 12px;
+}
+.research-row:last-child { border-bottom: none; }
+.research-row .rkey { color: var(--fg-subtle); flex-shrink: 0; min-width: 70px; }
+.research-row .rval { color: var(--fg-muted); }
+
+.panel-links { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 150ms;
+  cursor: pointer;
+}
+.link-btn:hover { background: var(--surface-hover); color: var(--fg); border-color: rgba(255,255,255,0.14); }
+.link-btn svg { width: 12px; height: 12px; }
+.link-btn.primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.link-btn.primary:hover { background: rgba(94,106,210,0.25); }
+
+.status-select-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.status-select-row label { font-size: 12px; color: var(--fg-subtle); flex-shrink: 0; }
+.status-select {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+.status-select:focus { border-color: var(--border-focus); }
+
+.notes-area {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color 150ms;
+}
+.notes-area:focus { border-color: var(--border-focus); }
+.notes-area::placeholder { color: var(--fg-subtle); }
+
+.save-btn {
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 150ms;
+  margin-top: 8px;
+}
+.save-btn:hover { background: #6B7DE0; }
+
+/* ─── Modal ─── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms;
+}
+.modal-backdrop.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 250ms var(--ease);
+  box-shadow: var(--shadow-lg);
+}
+.modal-backdrop.open .modal { transform: translateY(0) scale(1); }
+
+.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; color: var(--fg); }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--fg-muted); margin-bottom: 4px; display: block; }
+.form-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 150ms;
+}
+.form-input:focus { border-color: var(--border-focus); }
+.form-input::placeholder { color: var(--fg-subtle); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.btn-cancel {
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 150ms;
+}
+.btn-cancel:hover { background: var(--surface); color: var(--fg); }
+
+/* ─── Empty state ─── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--fg-subtle);
+  gap: 8px;
+  text-align: center;
+}
+.empty svg { opacity: 0.3; width: 40px; height: 40px; margin-bottom: 4px; }
+.empty .t { font-size: 14px; font-weight: 500; color: var(--fg-muted); }
+.empty .s { font-size: 12px; }
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--bg-overlay);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+  z-index: 999;
+  transition: transform 300ms var(--ease);
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.green { border-color: rgba(16,185,129,0.3); color: var(--green); }
+
+/* ─── Priority badge ─── */
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  flex-shrink: 0;
+}
+.priority-badge.p1 { background: var(--green); }
+.priority-badge.p2 { background: #3B82F6; }
+.priority-badge.p3 { background: #8B5CF6; }
+
+/* ─── Responsive ─── */
+@media (max-width: 900px) {
+  .detail-panel.open { width: 100%; min-width: 100%; position: fixed; inset: 0; top: 0; height: 100dvh; z-index: 150; background: var(--bg-base); border-left: none; }
+  .panel-inner { width: 100%; }
+  .header-stats { display: none; }
+}
+@media (max-width: 600px) {
+  .header-inner { gap: 12px; }
+  .toolbar-inner { gap: 8px; }
+  .cards-area { padding: 12px; }
+  .card-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
+/* ─── Contacts panel ─── */
+.contacts-list { display: flex; flex-direction: column; gap: 10px; }
+.contact-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.contact-card:hover { background: var(--surface-hover); }
+.contact-header { display: flex; align-items: flex-start; gap: 8px; justify-content: space-between; }
+.contact-name-block { display: flex; flex-direction: column; gap: 2px; }
+.contact-name { font-size: 13px; font-weight: 600; color: var(--fg); }
+.contact-title { font-size: 11px; color: var(--fg-muted); }
+.contact-type {
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+  padding: 2px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+}
+.contact-type.hm  { background: rgba(94,106,210,.15); color: var(--accent); border: 1px solid rgba(94,106,210,.25); }
+.contact-type.rec { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,.2); }
+.contact-type.peer{ background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,.2); }
+.contact-msg {
+  font-size: 12px; color: var(--fg-muted); line-height: 1.5;
+  background: rgba(0,0,0,.2); border-radius: var(--radius-sm);
+  padding: 8px 10px; position: relative; cursor: pointer;
+  border: 1px solid transparent;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.contact-msg.expanded { -webkit-line-clamp: unset; overflow: visible; }
+.contact-msg:hover { border-color: var(--border); }
+.contact-actions { display: flex; gap: 6px; margin-top: 2px; }
+.contact-btn {
+  font-size: 11px; font-weight: 500; padding: 4px 10px;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: transparent; color: var(--fg-muted); cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+  transition: all 120ms;
+}
+.contact-btn:hover { background: var(--surface-hover); color: var(--fg); }
+.contact-btn.copy { color: var(--accent); border-color: rgba(94,106,210,.3); }
+.contact-btn.copy:hover { background: var(--accent-dim); }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-dot"></div>
+        CareerOps
+      </div>
+      <div class="header-stats" id="header-stats"></div>
+      <button class="btn-add" onclick="openAddModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add offer
+      </button>
+    </div>
+  </header>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-inner">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="search" type="text" placeholder="Search company, role, tag…" oninput="render()">
+      </div>
+      <div class="filter-group" id="rec-filters">
+        <button class="filter-btn active" data-rec="all" onclick="setRecFilter(this,'all')">All</button>
+        <button class="filter-btn" data-rec="apply" onclick="setRecFilter(this,'apply')">Apply ✓</button>
+        <button class="filter-btn" data-rec="maybe" onclick="setRecFilter(this,'maybe')">If confirmed</button>
+        <button class="filter-btn" data-rec="skip" onclick="setRecFilter(this,'skip')">Skip</button>
+      </div>
+      <div class="filter-group" id="status-filters">
+        <button class="filter-btn active" data-status="all" onclick="setStatusFilter(this,'all')">Status: All</button>
+        <button class="filter-btn" data-status="Evaluated" onclick="setStatusFilter(this,'Evaluated')">Evaluated</button>
+        <button class="filter-btn" data-status="Applied" onclick="setStatusFilter(this,'Applied')">Applied</button>
+        <button class="filter-btn" data-status="Interview" onclick="setStatusFilter(this,'Interview')">Interview</button>
+      </div>
+      <select class="sort-select" id="sort" onchange="render()">
+        <option value="score-desc">Score ↓</option>
+        <option value="score-asc">Score ↑</option>
+        <option value="priority">Priority</option>
+        <option value="company">Company A–Z</option>
+        <option value="date-desc">Date ↓</option>
+      </select>
+      <div class="view-toggle">
+        <button class="view-btn active" id="view-cards" onclick="setView('cards')" title="Cards">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </button>
+        <button class="view-btn" id="view-table" onclick="setView('table')" title="Table">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main" id="main-layout">
+    <div class="cards-area" id="cards-area">
+      <div id="content"></div>
+    </div>
+    <div class="detail-panel" id="detail-panel">
+      <div class="panel-inner" id="panel-inner"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-backdrop" id="add-modal">
+  <div class="modal">
+    <div class="modal-title">Add new offer</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Company *</label>
+        <input class="form-input" id="f-company" type="text" placeholder="e.g. Figma">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role *</label>
+        <input class="form-input" id="f-role" type="text" placeholder="e.g. Design System Designer">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">JD URL</label>
+      <input class="form-input" id="f-url" type="url" placeholder="https://…">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Score (0–5)</label>
+        <input class="form-input" id="f-score" type="number" min="0" max="5" step="0.1" placeholder="4.2">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Location</label>
+        <input class="form-input" id="f-location" type="text" placeholder="Remote EU">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-input" id="f-status">
+          <option value="Evaluated">Evaluated</option>
+          <option value="Applied">Applied</option>
+          <option value="Interview">Interview</option>
+          <option value="Offer">Offer</option>
+          <option value="Rejected">Rejected</option>
+          <option value="SKIP">Skip</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Compensation</label>
+        <input class="form-input" id="f-comp" type="text" placeholder="€60k–90k / €55/h">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Recommendation</label>
+      <select class="form-input" id="f-rec">
+        <option value="Apply">Apply</option>
+        <option value="Apply if EU confirmed">Apply if EU confirmed</option>
+        <option value="Apply if comp OK">Apply if comp OK</option>
+        <option value="Apply if coding fits">Apply if coding fits</option>
+        <option value="Apply if remote confirmed">Apply if remote confirmed</option>
+        <option value="Apply if Berlin relocation">Apply if Berlin relocation</option>
+        <option value="Apply if general PD OK">Apply if general PD OK</option>
+        <option value="Skip">Skip</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags (comma separated)</label>
+      <input class="form-input" id="f-tags" type="text" placeholder="Design Systems, Remote EU, Tokens">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes / Match</label>
+      <textarea class="form-input notes-area" id="f-notes" placeholder="Key match points, gaps, angle…" style="min-height:70px;resize:vertical"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+      <button class="save-btn" onclick="addEntry()">Add offer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="contacts-data.js"></script>
+<script>
+// ─── Data ──────────────────────────────────────────────────────────────────
+const BASE_DATA = [
+  {id:'025',company:'Fever',role:'Senior Product Designer - Design Systems',score:4.575,status:'Evaluated',rec:'Apply',url:'https://www.designremotejobs.com/job/fever-senior-product-designer-design-systems',report:'reports/025-fever-2026-04-21.md',location:'Remote EU (Spain)',comp:'€45k–€75k + bonus + stock',date:'2026-04-22',tags:['Design Systems','Tokens','Multi-brand','WCAG','Remote EU'],blocks:{A:5.0,B:5.0,C:3.0,D:4.5,E:4.5},match:'HIGHEST MATCH — JD explicitly names design tokens + multi-brand theming + WCAG + Figma + Storybook + Zeroheight. The role IS Michał\'s Vio.com work written as a job ad.',gaps:'Comp below B2B target (€45–75k vs €55/h). Push for B2B: €55/h = €110k/yr >> listed range.',research:{stage:'Global entertainment platform — 300M+ monthly users, 55+ countries, Madrid HQ.',remote:'Remote EU — Spain HQ. CET timezone perfect.',funding:'Private, est. €2B+ valuation.',design:'Dedicated DS squad. Multi-brand white-label architecture. Figma + Storybook + Zeroheight.',angle:'Lead with Vio.com multi-brand DS. Say "I\'ve done exactly this." Frame as B2B contractor to bridge the comp gap.'},priority:1},
+  {id:'001',company:'Hostaway',role:'Senior Product Designer - Design Systems',score:4.35,status:'Evaluated',rec:'Apply',url:'https://careers.hostaway.com/o/senior-product-designer-design-systems-100-remote-emea',report:'reports/001-hostaway-2026-04-21.md',location:'100% Remote EMEA',comp:'Competitive + equity (undisclosed)',date:'2026-04-22',tags:['Design Systems','Remote EMEA','Unicorn','React'],blocks:{A:4.0,B:5.0,C:3.0,D:5.0,E:5.0},match:'Foundational DS owner role. 100% EMEA remote hard-coded in the title. $1B unicorn, 50%+ headcount growth. Going "design-driven" in 2026.',gaps:'No explicit Token Studio mention. Comp not disclosed — verify in first call.',research:{stage:'Unicorn — $1B valuation. World\'s first short-term rental PMS unicorn. $365M raised 2024.',remote:'100% Remote — team in 44 countries.',funding:'$543M total funding. Unicorn 2024.',design:'Explicitly "becoming design-driven in 2026." Component-based architecture. React/HTML/CSS collab required.',angle:'Art Wizard (foundational DS) + Vio.com (5yr travel/hospitality DS) = direct match. Safest location bet in pipeline.'},priority:2},
+  {id:'002',company:'Hostinger',role:'Senior Design System Designer',score:4.35,status:'Evaluated',rec:'Apply',url:'https://jobs.lever.co/hostinger/fdc72254-52e4-4267-865f-5369cbe795a5',report:'reports/002-hostinger-2026-04-21.md',location:'Remote / Vilnius (EU)',comp:'Unverified — JD 403',date:'2026-04-22',tags:['Design Systems','EU','Solo ownership','Figma'],blocks:{A:4.5,B:5.0,C:3.5,D:4.0,E:4.0},match:'Exact title match. EU company (~1000+ employees). Solo DS ownership role. Serious multi-product SaaS (hosting, builder, hPanel).',gaps:'JD not accessible (403 error). Comp range unknown. Access via hostinger.com/career directly.',research:{stage:'~2M+ customers. Lithuania HQ. 1000+ employees. Bootstrapped/profitable.',remote:'Multiple remote roles listed. EU-friendly hiring.',funding:'Bootstrapped, profitable web hosting leader.',design:'Serious design org. Multi-product SaaS surfaces needing unified DS.',angle:'DS from zero + multi-product context = Art Wizard + VisualPanda match. Get JD from careers page.'},priority:3},
+  {id:'004',company:'Back Market',role:'Senior Product Designer – Design System',score:4.30,status:'Discarded',rec:'Skip',url:'https://jobs.ashbyhq.com/backmarket/53d4b35c-0b5c-4806-94b7-209efb185c86',report:'reports/004-backmarket-2026-04-21.md',location:'Paris EU (Remote-friendly)',comp:'Est. €60–90k',date:'2026-04-22',tags:['Design Systems','Paris','EU','E-commerce','Unicorn','Rebrand'],blocks:{A:4.0,B:5.0,C:3.5,D:4.5,E:4.5},match:'Paris EU unicorn (€910M raised). Dedicated DS squad per ProductPeople case study. E-commerce at scale = VisualPanda + Vio.com match. Recent rebrand = fresh DS challenge.',gaps:'JD minimal (Ashby SPA). Hybrid Paris likely.',research:{stage:'Paris unicorn, €910M raised. ~2000 employees. 16 countries refurb marketplace.',remote:'Paris HQ. Remote-friendly EU culture.',funding:'€910M. Unicorn.',design:'Centralized DS squad (read ProductPeople case study). Simultaneous Frontend DS hire. 2024–25 rebrand.',angle:'ProductPeople case study = cheat sheet for interview. E-commerce DS + 16 countries = locale/RTL angle.'},priority:4},
+  {id:'005',company:'Harvey',role:'Staff Design Systems Designer',score:4.225,status:'Evaluated',rec:'Apply',url:'https://jobs.ashbyhq.com/harvey/9814b9ca-5917-43f8-8f76-6df7aa7e2be3',report:'reports/005-harvey-2026-04-21.md',location:'SF HQ (EU remote TBD)',comp:'Est. $180–250k + equity',date:'2026-04-22',tags:['Design Systems','AI Legal','Staff','High comp','$11B'],blocks:{A:4.5,B:5.0,C:4.0,D:3.0,E:3.5},match:'Staff DS Designer at hypergrowth AI legal. $11B valuation (Mar 2026), $200M latest raise. $190M ARR. Clients: global law firms, NBCUniversal, HSBC.',gaps:'EU remote policy unknown — verify BEFORE applying. SF preference likely for Staff manager-level.',research:{stage:'$11B valuation (Mar 2026). $190M ARR. Fastest-growing legal AI.',remote:'SF HQ. EU remote policy TBD — check LinkedIn for EU employees.',funding:'$806M total. Latest: $200M Mar 2026.',design:'Staff DS = likely 1st or 2nd DS hire. Legal UI = complex info architecture, accessibility critical.',angle:'Verify EU first. Then: enterprise DS complexity + Crafton ME Gov angle (law firms = government-adjacent).'},priority:5},
+  {id:'010',company:'Xsolla',role:'Design System Designer',score:4.20,status:'Evaluated',rec:'Apply',url:'https://jobs.lever.co/xsolla/bf516519-eea9-4ff1-8b5a-2f86cf618c94',report:'reports/010-xsolla-2026-04-21.md',location:'Remote EU/CIS',comp:'Unverified — verify',date:'2026-04-22',tags:['Design Systems','Gaming','Remote EU','Multi-platform','Token Studio signal'],blocks:{A:4.5,B:5.0,C:3.0,D:3.5,E:4.0},match:'Exact title match. "AI-native pipelines, single source of truth" = Token Studio direct alignment. Global gaming payments platform with multiple product surfaces.',gaps:'JD 403 error. Comp unknown. Access via xsolla.com/careers.',research:{stage:'Gaming commerce platform. $700M+ ARR. LA, Berlin, Seoul, Singapore.',remote:'Remote for CIS region (Poland = CET = qualifies).',funding:'Private, profitable.',design:'Existing DS (Igor Sokoltsov portfolio). Multi-platform: web, mobile, gaming. Token Studio signal strong.',angle:'Token Studio depth = rare differentiator. Multi-locale (16 languages) + RTL = Crafton ME proof.'},priority:6},
+  {id:'006',company:'Replit',role:'Staff Product Designer, Design System',score:4.10,status:'Evaluated',rec:'Apply',url:'https://jobs.ashbyhq.com/replit/955b73a9-4aec-456d-876b-38ac98cbdecd',report:'reports/006-replit-2026-04-21.md',location:'SF HQ (EU remote TBD)',comp:'Est. $180–250k + equity',date:'2026-04-22',tags:['Design Systems','Dev tools','Staff','AI-first','$3B'],blocks:{A:4.5,B:5.0,C:3.5,D:3.0,E:3.0},match:'Staff DS at AI-first dev platform. $3B valuation, $250M raised Jan 2026. Figma import (2025) + Design Mode (Nov 2025) = design-forward company.',gaps:'EU remote unknown. Dev-tool culture may expect React coding.',research:{stage:'$3B valuation. $250M raised Jan 2026. AI Agent v2/v3 + Design Mode.',remote:'Remote-friendly product. SF HQ. DS role EU policy TBD.',funding:'$250M Jan 2026 at $3B.',design:'Figma import 2025. Design Mode Nov 2025. Design-forward AI-first.',angle:'Use Replit before interview. AI-assisted DS = direct alignment. Verify EU remote first.'},priority:7},
+  {id:'003',company:'Sentry',role:'Senior Product Designer, Design Systems',score:4.05,status:'Evaluated',rec:'Apply',url:'https://jobs.ashbyhq.com/sentry/7dd36fef-d2a5-4c18-8425-dc6d2073ded4',report:'reports/003-sentry-2026-04-21.md',location:'SF HQ (Remote-friendly)',comp:'Est. $150–200k',date:'2026-04-22',tags:['Design Systems','Dev tools','Open source','Remote-friendly'],blocks:{A:4.0,B:5.0,C:3.5,D:3.5,E:3.5},match:'DS title + developer tooling context. Open source Sentry UI on GitHub. Senior IC remote historically possible. Interview difficulty 2.6/5.',gaps:'EU remote policy unverified. Verify EMEA eligibility.',research:{stage:'~700 employees. Open source error monitoring. Profitable/near-profitable.',remote:'Hybrid SF for juniors, remote for senior ICs. Verify EMEA.',funding:'Late stage, profitable.',design:'Open source DS components on GitHub. Complex developer-tool UI.',angle:'Check Sentry GitHub for DS components. Interview: 56.9% positive. Prepare systems-thinking angle.'},priority:8},
+  // Apply if confirmed
+  {id:'009',company:'Zip',role:'Senior Product Designer, Design Systems',score:3.975,status:'Evaluated',rec:'Apply if EU confirmed',url:'https://jobs.ashbyhq.com/zip/500787f7-91e2-44c3-85af-b62330a04ae2',report:'reports/009-zip-2026-04-21.md',location:'SF (EU remote TBD)',comp:'Unverified',date:'2026-04-22',tags:['Design Systems','B2B SaaS','Procurement'],blocks:{A:4.0,B:5.0,C:3.5,D:3.0,E:3.5},match:'DS title + B2B SaaS = VisualPanda context match. Procurement software = complex multi-state components.',gaps:'EU remote unknown. Verify before investing time.',research:null,priority:9},
+  {id:'007',company:'OpenAI',role:'Design Systems Manager',score:3.90,status:'Evaluated',rec:'Apply if remote confirmed',url:'https://jobs.ashbyhq.com/openai/799c9532-6b73-4f34-b73e-34f40dd52583',report:'reports/007-openai-2026-04-21.md',location:'SF (Manager = likely onsite)',comp:'Est. $250k+ USD',date:'2026-04-22',tags:['Design Systems','Manager','OpenAI','High comp'],blocks:{A:4.0,B:4.5,C:5.0,D:2.5,E:2.5},match:'Manager-level DS. Exceptional comp. Governance experience (Art Wizard) matches management scope.',gaps:'SF Manager = almost certainly requires presence. Long shot for EU remote.',research:null,priority:10},
+  {id:'023',company:'Amplemarket',role:'Senior Product Designer',score:3.80,status:'Evaluated',rec:'Apply if comp OK',url:'https://job-boards.eu.greenhouse.io/amplemarket/jobs/4347713101',report:'reports/023-amplemarket-2026-04-21.md',location:'Remote EMEA (GMT±3)',comp:'Competitive (undisclosed)',date:'2026-04-22',tags:['Product Design','Remote EMEA','AI Sales','DS exp required'],blocks:{A:3.5,B:3.5,C:3.0,D:5.0,E:5.0},match:'Remote EMEA — Poland CET fits perfectly. DS experience required. Figma + Figma Make + Cursor. No location friction at all.',gaps:'Not DS-primary role. Comp unknown. Lisbon startup.',research:null,priority:11},
+  {id:'011',company:'Oura',role:'Senior Product Designer, Design Systems',score:3.675,status:'Evaluated',rec:'Apply if remote confirmed',url:'https://job-boards.greenhouse.io/oura/jobs/4038467009',report:'reports/011-oura-2026-04-21.md',location:'Hybrid SF (all design roles)',comp:'SF-level competitive',date:'2026-04-22',tags:['Design Systems','Health','Hybrid SF','Likely blocker'],blocks:{A:4.0,B:5.0,C:3.5,D:2.0,E:2.0},match:'DS title. Strong brand.',gaps:'All Oura design roles show Hybrid SF. Near-certain blocker.',research:null,priority:12},
+  {id:'008',company:'LiveKit',role:'Design Engineer, Design Systems',score:3.625,status:'Evaluated',rec:'Apply if coding fits',url:'https://jobs.ashbyhq.com/livekit/88a67836-6ec6-4112-a69c-77bc9c7a369d',report:'reports/008-livekit-2026-04-21.md',location:'Remote-first',comp:'Unverified',date:'2026-04-22',tags:['Design Engineer','Design Systems','Code-heavy','React required'],blocks:{A:3.5,B:3.5,C:3.5,D:4.0,E:4.0},match:'DS in title. Remote-first company.',gaps:'Design Engineer = React/TS coding required. Partial profile fit.',research:null,priority:13},
+  {id:'012',company:'GetYourGuide',role:'Senior Systems Designer',score:3.55,status:'Evaluated',rec:'Apply if Berlin relocation',url:'https://getyourguide.careers/jobs/7487226',report:'reports/012-getyourguide-systems-2026-04-21.md',location:'Berlin office (30d remote/yr)',comp:'Est. €65–100k',date:'2026-04-22',tags:['Design Systems','Berlin','Travel','Hybrid'],blocks:{A:3.5,B:4.0,C:3.0,D:3.5,E:3.5},match:'Travel context = Vio.com match. Systems Designer title. €1k/yr learning budget.',gaps:'Office required most of the year (30 days remote only). Requires Berlin commute.',research:null,priority:14},
+  {id:'014',company:'Vercel',role:'Senior Product Designer',score:3.525,status:'Evaluated',rec:'Apply if general PD OK',url:'https://job-boards.greenhouse.io/vercel/jobs/5735407004',report:'reports/014-vercel-senior-pd-2026-04-21.md',location:'Remote US / EU anchor days',comp:'$156k–$234k SF',date:'2026-04-22',tags:['Product Design','Dev tools','High comp','Anchor days'],blocks:{A:3.5,B:3.0,C:4.5,D:3.5,E:3.5},match:'Premium brand. DS experience valued. Good comp signal. Berlin/London anchor days possible.',gaps:'General PD role, not DS-primary.',research:null,priority:15},
+  // Skip zone
+  {id:'022',company:'Arize AI',role:'UX Designer',score:3.10,status:'Evaluated',rec:'Skip',url:'https://job-boards.greenhouse.io/arizeai/jobs/5790042004',report:'reports/022-arizeai-2026-04-21.md',location:'Remote US',comp:'$165k–$200k',date:'2026-04-22',tags:['UX Design','LLMOps','Engineering bg required'],blocks:{A:3.0,B:2.5,C:4.5,D:3.0,E:3.0},match:'Good comp.',gaps:'Engineering background required. Not DS-primary.',research:null,priority:99},
+  {id:'019',company:'Parloa',role:'Staff PD - Expert Experience',score:3.075,status:'Evaluated',rec:'Skip',url:'https://job-boards.eu.greenhouse.io/parloa/jobs/4716871101',report:'reports/019-parloa-expert-2026-04-21.md',location:'Berlin hybrid',comp:'Unverified',date:'2026-04-22',tags:['Product Design','Berlin','Voice AI','Hybrid'],blocks:{A:2.5,B:3.0,C:3.5,D:3.5,E:4.0},match:'Systems thinking component.',gaps:'No DS scope. Berlin hybrid.',research:null,priority:99},
+  {id:'021',company:'Trade Republic',role:'Senior PD (Mobile)',score:2.95,status:'Evaluated',rec:'Skip',url:'https://traderepublic.com/en-de/about?jobId=5207557003',report:'reports/021-traderepublic-2026-04-21.md',location:'Berlin hybrid',comp:'Est. €70–120k',date:'2026-04-22',tags:['Mobile','Berlin','Fintech','No DS'],blocks:{A:2.5,B:2.5,C:3.5,D:3.5,E:4.0},match:'',gaps:'Mobile focus. No DS. Berlin hybrid.',research:null,priority:99},
+  {id:'018',company:'Parloa',role:'Staff PD - Consumer Experience',score:2.95,status:'Evaluated',rec:'Skip',url:'https://job-boards.eu.greenhouse.io/parloa/jobs/4679089101',report:'reports/018-parloa-consumer-2026-04-21.md',location:'Berlin hybrid',comp:'Unverified',date:'2026-04-22',tags:['Product Design','Berlin','Voice AI','Consumer'],blocks:{A:2.5,B:2.5,C:3.5,D:3.5,E:4.0},match:'',gaps:'Consumer UX. Berlin hybrid. No DS.',research:null,priority:99},
+  {id:'020',company:'Helsing',role:'Deployed Product Designer',score:2.85,status:'Evaluated',rec:'Skip',url:'https://helsing.ai/jobs/4564710101',report:'reports/020-helsing-2026-04-21.md',location:'Munich / Berlin / London',comp:'Strong (defence)',date:'2026-04-22',tags:['Defence AI','Field work','EU','Wrong archetype'],blocks:{A:2.5,B:2.0,C:3.5,D:4.0,E:3.5},match:'EU-based.',gaps:'Field/deployed ≠ DS. Clearance may be required.',research:null,priority:99},
+  {id:'013',company:'GetYourGuide',role:'Senior Product Designer (B2C)',score:2.80,status:'Evaluated',rec:'Skip',url:'https://getyourguide.careers/jobs/7559680',report:'reports/013-getyourguide-b2c-2026-04-21.md',location:'Berlin hybrid',comp:'Unverified',date:'2026-04-22',tags:['Product Design','Berlin','B2C','No DS'],blocks:{A:2.5,B:2.5,C:3.0,D:3.0,E:4.0},match:'',gaps:'No DS. Berlin required.',research:null,priority:99},
+  {id:'015',company:'Vercel',role:'Design Engineer (Marketing)',score:2.875,status:'Evaluated',rec:'Skip',url:'https://job-boards.greenhouse.io/vercel/jobs/5709080004',report:'reports/015-vercel-design-engineer-2026-04-21.md',location:'Remote US',comp:'$196k–$294k',date:'2026-04-22',tags:['Design Engineer','Marketing','Next.js','Wrong archetype'],blocks:{A:2.5,B:2.0,C:5.0,D:3.0,E:3.0},match:'Exceptional comp.',gaps:'Marketing design engineering role. Requires Next.js/Vercel expertise. Wrong archetype.',research:null,priority:99},
+  {id:'017',company:'Hume AI',role:'Product Designer',score:2.55,status:'Evaluated',rec:'Skip',url:'https://job-boards.greenhouse.io/humeai/jobs/4004597008',report:'reports/017-humeai-2026-04-21.md',location:'NYC / San Jose / Remote',comp:'$120k–$170k',date:'2026-04-22',tags:['Product Design','Consumer AI','Underleveled'],blocks:{A:2.0,B:2.0,C:3.5,D:3.5,E:3.0},match:'',gaps:'Underleveled (2yr exp req). No DS. Consumer UI.',research:null,priority:99},
+  {id:'016',company:'Contentful',role:'Product Designer',score:2.45,status:'Evaluated',rec:'Skip',url:'https://job-boards.greenhouse.io/contentful/jobs/7763320',report:'reports/016-contentful-2026-04-21.md',location:'Denver CO 🇺🇸 (US only)',comp:'$119k–$161k',date:'2026-04-22',tags:['Product Design','US only','🚫 Hard blocker'],blocks:{A:3.0,B:2.5,C:3.0,D:1.5,E:1.0},match:'',gaps:'🚫 US work authorization required. EU citizen not eligible.',research:null,priority:99},
+  {id:'024',company:'Airtable',role:'Product Designer',score:2.375,status:'Evaluated',rec:'Skip',url:'https://job-boards.greenhouse.io/airtable/jobs/8474256002',report:'reports/024-airtable-2026-04-21.md',location:'On-site SF 🇺🇸',comp:'$224k–$317k',date:'2026-04-22',tags:['Product Design','On-site SF','🚫 Hard blocker'],blocks:{A:2.5,B:2.0,C:5.0,D:1.0,E:1.0},match:'Exceptional comp.',gaps:'🚫 On-site San Francisco. Impossible from Poland.',research:null,priority:99},
+];
+
+// ─── State ──────────────────────────────────────────────────────────────────
+const LS_KEY = 'career-ops-v2';
+let state = {
+  overrides: {},   // id → { status, notes }
+  custom: [],      // user-added entries
+};
+let selectedId = null;
+let activeRecFilter = 'all';
+let activeStatusFilter = 'all';
+let currentView = 'cards';
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    state.overrides = s.overrides || {};
+    state.custom = s.custom || [];
+  } catch(e) {}
+}
+function saveState() {
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+}
+
+function allData() {
+  const baseWithOverrides = BASE_DATA.map(d => {
+    const ov = state.overrides[d.id] || {};
+    return { ...d, status: ov.status || d.status, notes: ov.notes || '' };
+  });
+  return [...baseWithOverrides, ...state.custom];
+}
+
+// ─── Filters ────────────────────────────────────────────────────────────────
+function setRecFilter(btn, val) {
+  activeRecFilter = val;
+  document.querySelectorAll('[data-rec]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+function setStatusFilter(btn, val) {
+  activeStatusFilter = val;
+  document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+function setView(v) {
+  currentView = v;
+  document.getElementById('view-cards').classList.toggle('active', v === 'cards');
+  document.getElementById('view-table').classList.toggle('active', v === 'table');
+  render();
+}
+
+function filterData(data) {
+  const q = document.getElementById('search').value.toLowerCase();
+  return data.filter(d => {
+    if (q) {
+      const hay = `${d.company} ${d.role} ${(d.tags||[]).join(' ')} ${d.location}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (activeRecFilter !== 'all') {
+      const rec = d.rec.toLowerCase();
+      if (activeRecFilter === 'apply' && !rec.startsWith('apply') || (activeRecFilter === 'apply' && rec.includes('if'))) return false;
+      if (activeRecFilter === 'apply') {
+        if (!rec.startsWith('apply') || rec.includes('if')) return false;
+      }
+      if (activeRecFilter === 'maybe' && !rec.includes('if')) return false;
+      if (activeRecFilter === 'skip' && rec !== 'skip') return false;
+    }
+    if (activeStatusFilter !== 'all' && d.status !== activeStatusFilter) return false;
+    return true;
+  });
+}
+
+function sortData(data) {
+  const s = document.getElementById('sort').value;
+  return [...data].sort((a, b) => {
+    if (s === 'score-desc') return b.score - a.score;
+    if (s === 'score-asc')  return a.score - b.score;
+    if (s === 'priority')   return (a.priority||99) - (b.priority||99);
+    if (s === 'company')    return a.company.localeCompare(b.company);
+    if (s === 'date-desc')  return (b.date||'').localeCompare(a.date||'');
+    return 0;
+  });
+}
+
+// ─── Score helpers ──────────────────────────────────────────────────────────
+function scoreClass(s) {
+  if (s >= 4.0) return 'score-high';
+  if (s >= 3.5) return 'score-mid';
+  if (s >= 2.5) return 'score-low';
+  return 'score-bad';
+}
+function scoreColor(s) {
+  if (s >= 4.0) return 'var(--green)';
+  if (s >= 3.5) return 'var(--amber)';
+  return 'var(--fg-subtle)';
+}
+function recClass(rec) {
+  const r = rec.toLowerCase();
+  if (r.startsWith('apply') && !r.includes('if')) return 'rec-apply';
+  if (r.includes('if')) return 'rec-maybe';
+  return 'rec-skip';
+}
+function statusClass(s) {
+  const m = {Evaluated:'status-evaluated',Applied:'status-applied',Interview:'status-interview',Offer:'status-offer',Rejected:'status-rejected',SKIP:'status-skip'};
+  return m[s] || 'status-evaluated';
+}
+function blockColor(v) {
+  if (v >= 4.5) return 'var(--green)';
+  if (v >= 3.5) return '#6EE7B7';
+  if (v >= 2.5) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+// ─── Stats ──────────────────────────────────────────────────────────────────
+function renderStats() {
+  const data = allData();
+  const toApply = data.filter(d => d.rec.toLowerCase().startsWith('apply') && !d.rec.toLowerCase().includes('if')).length;
+  const applied = data.filter(d => d.status === 'Applied').length;
+  const interview = data.filter(d => d.status === 'Interview').length;
+  document.getElementById('header-stats').innerHTML = `
+    <div class="stat-pill"><span class="num">${data.length}</span> offers</div>
+    <div class="stat-pill apply"><span class="num">${toApply}</span> apply now</div>
+    <div class="stat-pill pending"><span class="num">${applied}</span> applied</div>
+    <div class="stat-pill done"><span class="num">${interview}</span> interview</div>
+  `;
+}
+
+// ─── Render ──────────────────────────────────────────────────────────────────
+function render() {
+  renderStats();
+  const filtered = sortData(filterData(allData()));
+
+  const applyNow = filtered.filter(d => d.rec.toLowerCase().startsWith('apply') && !d.rec.toLowerCase().includes('if'));
+  const applyIf  = filtered.filter(d => d.rec.toLowerCase().includes('if'));
+  const skip     = filtered.filter(d => d.rec.toLowerCase() === 'skip');
+
+  const content = document.getElementById('content');
+
+  if (filtered.length === 0) {
+    content.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="t">No offers match your filters</div><div class="s">Try changing the search or filter</div></div>`;
+    return;
+  }
+
+  if (currentView === 'table') {
+    content.innerHTML = renderTable(filtered);
+    return;
+  }
+
+  let html = '';
+  if (applyNow.length) html += renderSection('Apply now', applyNow, applyNow.length);
+  if (applyIf.length)  html += renderSection('Verify first', applyIf, applyIf.length);
+  if (skip.length && activeRecFilter !== 'apply' && activeRecFilter !== 'maybe') {
+    html += renderSection('Skip', skip, skip.length);
+  }
+  content.innerHTML = html;
+}
+
+function renderSection(label, items, count) {
+  return `<div class="section-label">${label} <span class="count">${count}</span></div>
+    <div class="card-grid">${items.map(renderCard).join('')}</div>`;
+}
+
+function renderCard(d) {
+  const sc = scoreClass(d.score);
+  const rc = recClass(d.rec);
+  const ov = state.overrides[d.id] || {};
+  const status = ov.status || d.status;
+  const sel = selectedId === d.id ? 'selected' : '';
+  const rLabel = d.research ? `<span class="priority-badge p${Math.min(d.priority,3)}">${d.priority}</span>` : '';
+  return `<div class="card ${sel}" onclick="selectCard('${d.id}')">
+    <div class="card-top">
+      <div>
+        <div class="card-company">${d.company} ${rLabel}</div>
+        <div class="card-role">${d.role}</div>
+      </div>
+      <div class="score-badge ${sc}">
+        ${d.score.toFixed(1)}<div class="label">/ 5</div>
+      </div>
+    </div>
+    <div class="card-meta">
+      <span class="status-pill ${statusClass(status)}">${status}</span>
+      <span class="chip chip-location">📍 ${d.location}</span>
+      ${d.comp && d.comp !== 'Unverified' ? `<span class="chip chip-location" style="color:var(--green);border-color:rgba(16,185,129,0.2);background:var(--green-dim)">💰 ${d.comp}</span>` : ''}
+    </div>
+    <div class="card-tags">${(d.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    <div class="card-rec"><span class="${rc}">● ${d.rec}</span></div>
+  </div>`;
+}
+
+function renderTable(items) {
+  const rows = items.map(d => {
+    const ov = state.overrides[d.id] || {};
+    const status = ov.status || d.status;
+    const sel = selectedId === d.id ? 'selected' : '';
+    return `<tr class="${sel}" onclick="selectCard('${d.id}')">
+      <td class="td-company">${d.company}</td>
+      <td class="td-role"><div style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.role}</div></td>
+      <td class="td-score" style="color:${scoreColor(d.score)}">${d.score.toFixed(2)}</td>
+      <td><span class="status-pill ${statusClass(status)}">${status}</span></td>
+      <td><span class="${recClass(d.rec)}" style="font-size:12px;font-weight:500">${d.rec}</span></td>
+      <td style="font-size:12px;color:var(--fg-muted)">${d.location}</td>
+      <td style="font-size:12px;color:var(--fg-muted)">${d.comp && d.comp!=='Unverified'?d.comp:'—'}</td>
+      <td><a href="${d.url}" target="_blank" onclick="event.stopPropagation()" class="link-btn" style="font-size:11px">JD ↗</a></td>
+    </tr>`;
+  }).join('');
+  return `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Company</th><th>Role</th><th>Score</th><th>Status</th><th>Rec</th><th>Location</th><th>Comp</th><th></th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+// ─── Detail Panel ──────────────────────────────────────────────────────────
+function selectCard(id) {
+  if (selectedId === id) {
+    selectedId = null;
+    closePanel();
+    render();
+    return;
+  }
+  selectedId = id;
+  render();
+  openPanel(id);
+}
+
+function openPanel(id) {
+  const data = allData().find(d => d.id === id);
+  if (!data) return;
+  const panel = document.getElementById('detail-panel');
+  const inner = document.getElementById('panel-inner');
+  const ov = state.overrides[id] || {};
+  const status = ov.status || data.status;
+  const notes = ov.notes || '';
+
+  const sc = scoreClass(data.score);
+
+  let blocksHtml = '';
+  if (data.blocks) {
+    const labels = {A:'CV',B:'North Star',C:'Comp',D:'Culture',E:'Flags'};
+    blocksHtml = `<div class="blocks-grid">` +
+      Object.entries(data.blocks).map(([k,v]) =>
+        `<div class="block-item">
+          <div class="block-label">${labels[k]}</div>
+          <div class="block-score" style="color:${blockColor(v)}">${v.toFixed(1)}</div>
+        </div>`
+      ).join('') + `</div>`;
+  }
+
+  let researchHtml = '';
+  if (data.research) {
+    const r = data.research;
+    researchHtml = `<div class="panel-section">
+      <div class="panel-section-title">🔬 Deep Research</div>
+      <div class="research-block">
+        ${r.stage?`<div class="research-row"><span class="rkey">Company</span><span class="rval">${r.stage}</span></div>`:''}
+        ${r.remote?`<div class="research-row"><span class="rkey">Remote</span><span class="rval">${r.remote}</span></div>`:''}
+        ${r.funding?`<div class="research-row"><span class="rkey">Funding</span><span class="rval">${r.funding}</span></div>`:''}
+        ${r.design?`<div class="research-row"><span class="rkey">Design</span><span class="rval">${r.design}</span></div>`:''}
+      </div>
+      ${r.angle?`<div class="highlight angle"><strong style="color:var(--accent)">Interview angle:</strong><br>${r.angle}</div>`:''}
+    </div>`;
+  }
+
+  inner.innerHTML = `
+    <div class="panel-header">
+      <div>
+        <div class="panel-company">${data.company}</div>
+        <div class="panel-role">${data.role}</div>
+      </div>
+      <button class="close-btn" onclick="closePanel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="panel-score-row">
+      <div class="score-big" style="color:${scoreColor(data.score)}">${data.score.toFixed(2)}</div>
+      <span style="color:var(--fg-subtle);font-size:14px;align-self:flex-end;margin-bottom:6px"> / 5.0</span>
+      <span class="status-pill ${statusClass(status)}" style="margin-left:4px">${status}</span>
+      ${data.comp && data.comp!=='Unverified' ? `<span class="chip chip-location" style="color:var(--green);border-color:rgba(16,185,129,0.2);background:var(--green-dim)">💰 ${data.comp}</span>` : ''}
+    </div>
+
+    ${blocksHtml}
+
+    <div class="panel-links">
+      <a href="${data.url}" target="_blank" class="link-btn primary">Open JD ↗</a>
+      ${data.report ? `<a href="${data.report}" class="link-btn">Report</a>` : ''}
+      <a href="https://www.linkedin.com/company/${encodeURIComponent(data.company.toLowerCase().replace(/\s+/g,'-'))}" target="_blank" class="link-btn">LinkedIn ↗</a>
+      <a href="https://glassdoor.com/Search/results.htm?keyword=${encodeURIComponent(data.company)}" target="_blank" class="link-btn">Glassdoor ↗</a>
+    </div>
+
+    ${data.match ? `<div class="panel-section">
+      <div class="panel-section-title">✅ Match</div>
+      <div class="highlight match">${data.match}</div>
+    </div>` : ''}
+
+    ${data.gaps ? `<div class="panel-section">
+      <div class="panel-section-title">⚠️ Gaps / Concerns</div>
+      <div class="highlight gap">${data.gaps}</div>
+    </div>` : ''}
+
+    ${researchHtml}
+
+    ${(()=>{
+      const contacts = (typeof contactsData !== 'undefined' && contactsData[id]) || [];
+      if (!contacts.length) return '';
+      const typeLabel = {
+        'Hiring Manager':'HM','Recruiter':'REC','Peer':'PEER','Interviewer':'HM'
+      };
+      const typeCls = {
+        'Hiring Manager':'hm','Recruiter':'rec','Peer':'peer','Interviewer':'hm'
+      };
+      const cards = contacts.map((c,i) => `
+        <div class="contact-card">
+          <div class="contact-header">
+            <div class="contact-name-block">
+              <div class="contact-name">${c.name}</div>
+              <div class="contact-title">${c.title}</div>
+            </div>
+            <span class="contact-type ${typeCls[c.type]||'peer'}">${typeLabel[c.type]||c.type}</span>
+          </div>
+          <div class="contact-msg" id="cmsg-${id}-${i}" onclick="this.classList.toggle('expanded')" title="Click to expand">${c.msg}</div>
+          <div class="contact-actions">
+            <a href="${c.linkedin}" target="_blank" class="contact-btn">LinkedIn ↗</a>
+            <button class="contact-btn copy" onclick="copyMsg('cmsg-${id}-${i}','${id}-${i}')">Copy msg</button>
+          </div>
+        </div>`).join('');
+      return `<div class="panel-section">
+        <div class="panel-section-title">👥 LinkedIn Contacts (${contacts.length})</div>
+        <div class="contacts-list">${cards}</div>
+        <div style="margin-top:6px"><a href="reports/${id.startsWith('0')?'0'.repeat(3-String(parseInt(id)).length)+parseInt(id):id}-${data.company.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}-contacto-2026-04-24.md" class="contact-btn" style="font-size:11px">Full report ↗</a></div>
+      </div>`;
+    })()}
+
+    <div class="panel-section">
+      <div class="panel-section-title">Tags</div>
+      <div class="card-tags">${(data.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    </div>
+
+    <div class="status-select-row">
+      <label>Status</label>
+      <select class="status-select" id="status-sel" onchange="updateStatus('${id}', this.value)">
+        ${['Evaluated','Applied','Interview','Offer','Rejected','SKIP'].map(s =>
+          `<option value="${s}" ${status===s?'selected':''}>${s}</option>`
+        ).join('')}
+      </select>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Notes</div>
+      <textarea class="notes-area" id="notes-ta" placeholder="Add personal notes, interview prep, contact names…">${notes}</textarea>
+      <button class="save-btn" onclick="saveNotes('${id}')">Save notes</button>
+    </div>
+  `;
+
+  panel.classList.add('open');
+}
+
+function closePanel() {
+  selectedId = null;
+  document.getElementById('detail-panel').classList.remove('open');
+  render();
+}
+
+function updateStatus(id, val) {
+  state.overrides[id] = state.overrides[id] || {};
+  state.overrides[id].status = val;
+  saveState();
+  renderStats();
+  toast('Status updated', true);
+}
+
+function saveNotes(id) {
+  const val = document.getElementById('notes-ta').value;
+  state.overrides[id] = state.overrides[id] || {};
+  state.overrides[id].notes = val;
+  saveState();
+  toast('Notes saved ✓', true);
+}
+
+// ─── Add modal ────────────────────────────────────────────────────────────
+function openAddModal() {
+  document.getElementById('add-modal').classList.add('open');
+}
+function closeAddModal() {
+  document.getElementById('add-modal').classList.remove('open');
+  ['f-company','f-role','f-url','f-score','f-location','f-comp','f-tags','f-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+function addEntry() {
+  const company = document.getElementById('f-company').value.trim();
+  const role = document.getElementById('f-role').value.trim();
+  if (!company || !role) { toast('Company and Role are required'); return; }
+  const score = parseFloat(document.getElementById('f-score').value) || 0;
+  const entry = {
+    id: 'custom-' + Date.now(),
+    company,
+    role,
+    score,
+    status: document.getElementById('f-status').value,
+    rec: document.getElementById('f-rec').value,
+    url: document.getElementById('f-url').value.trim() || '#',
+    location: document.getElementById('f-location').value.trim() || 'Unknown',
+    comp: document.getElementById('f-comp').value.trim() || 'Unverified',
+    date: new Date().toISOString().slice(0,10),
+    tags: document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    blocks: null,
+    match: document.getElementById('f-notes').value.trim(),
+    gaps: '',
+    research: null,
+    priority: 50,
+    notes: '',
+  };
+  state.custom.push(entry);
+  saveState();
+  closeAddModal();
+  render();
+  toast(`Added ${company} ✓`, true);
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, success=false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (success?' green':'');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ─── Keyboard shortcuts ────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePanel();
+  if (e.key === '/' && !['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) {
+    e.preventDefault();
+    document.getElementById('search').focus();
+  }
+  if (e.key === 'n' && !['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) {
+    openAddModal();
+  }
+});
+document.getElementById('add-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeAddModal();
+});
+
+// ─── Copy contact message ─────────────────────────────────────────────────
+function copyMsg(elemId, key) {
+  const el = document.getElementById(elemId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => toast('Copied ✓', true));
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────
+loadState();
+render();
+</script>
+</body>
+</html>
