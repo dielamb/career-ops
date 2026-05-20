@@ -73,6 +73,10 @@
 
 **Worktree parallelization**: After Phase 2
 
+**Plans:** 2 plans
+- [ ] 03-01-PLAN.md — GET routes (applications, pipeline, listing/[id]) + shared api-helpers/api-paths + vitest node-env config + 6 tests (API-01, API-02, API-03, TST-04 partial)
+- [ ] 03-02-PLAN.md — POST action routes (apply with Zod+spawn-mjs, mark-sent with Zod+lockedWrite) + 4 tests (API-04, API-05, TST-04 partial)
+
 #### Phase 4: Components
 
 **Goal**: 4 base components generated via magic MCP into `components/raw/`, motion-wrapped versions exported from `components/`, all consume DESIGN.md tokens.
