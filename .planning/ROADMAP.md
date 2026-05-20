@@ -8,7 +8,7 @@
 | 2 | Data Layer | 3/3 | Complete    | 2026-05-20 |
 | 3 | API Routes | 2/2 | Complete    | 2026-05-20 |
 | 4 | Components | 2/2 | Complete    | 2026-05-20 |
-| 5 | Pages + E2E | /today, /pipeline, listing modal + 3 Playwright E2E | PAG-01..05, TST-06 | Complete 2026-05-20 |
+| 5 | Pages + E2E | 3/3 | Complete    | 2026-05-20 |
 
 ---
 
@@ -114,7 +114,7 @@
 
 **Worktree parallelization**: After Phase 4 (depends on components)
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 - [x] 05-01-PLAN.md — Sidebar (raw + motion) + /today server page + TodayHero (raw + motion) replacing Phase 1 smoke; pixelBootUp on hero (PAG-01, PAG-04, PAG-05)
 - [x] 05-02-PLAN.md — /pipeline server page + PipelineTable (raw + motion, filter chips + search + sort) + ListingModal (raw + motion, side-by-side MD + PDF, action bar wired to /api/actions/*); optional /api/file passthrough for PDF iframe (PAG-02, PAG-03)
 - [x] 05-03-PLAN.md — 3 Playwright E2E specs (apply-flow, mark-sent-lock, malformed-md) + 2 fixtures; full suite reports 4 passing E2E (TST-06)
