@@ -5,7 +5,7 @@
 | # | Phase | Goal | Requirements | Success Criteria |
 |---|-------|------|--------------|------------------|
 | 1 | Foundation | 2/2 | Complete    | 2026-05-20 |
-| 2 | Data Layer | Parsers, spawn safety, lock-guarded writes + unit tests | DAT-01..07, TST-01..03 | 5 |
+| 2 | Data Layer | 3/3 | Complete    | 2026-05-20 |
 | 3 | API Routes | 5 Next.js API routes + integration tests | API-01..05, TST-04 | 4 |
 | 4 | Components | Magic MCP raw + motion-wrapped components + tests | COM-01..04, TST-05 | 4 |
 | 5 | Pages + E2E | /today, /pipeline, listing modal + 3 Playwright E2E | PAG-01..05, TST-06 | 5 |
@@ -51,9 +51,9 @@
 
 **Worktree parallelization**: After Phase 1; can run alongside Phase 3 (no shared files within `dashboard/web/lib/` after Phase 1 contract is set)
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 - [x] 02-01-PLAN.md — Install Phase 2 deps (zod, gray-matter, proper-lockfile, remark, papaparse) + lib/schemas.ts with 4 Zod schemas + ParseError (DAT-07)
-- [ ] 02-02-PLAN.md — 3 MD parsers (applications/pipeline/reports) + 14 vitest tests with per-row error boundary (DAT-01, DAT-02, DAT-03, DAT-06, TST-01)
+- [x] 02-02-PLAN.md — 3 MD parsers (applications/pipeline/reports) + 14 vitest tests with per-row error boundary (DAT-01, DAT-02, DAT-03, DAT-06, TST-01)
 - [x] 02-03-PLAN.md — spawn-mjs (array-form + URL validator) + git-commit (proper-lockfile wrapper) + 9 vitest tests (DAT-04, DAT-05, TST-02, TST-03)
 
 #### Phase 3: API Routes
