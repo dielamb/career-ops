@@ -4,7 +4,7 @@
 
 | # | Phase | Goal | Requirements | Success Criteria |
 |---|-------|------|--------------|------------------|
-| 1 | Foundation | Next.js + Tailwind + DESIGN.md tokens + test infrastructure stand up | FND-01..04 | 4 |
+| 1 | Foundation | 2/2 | Complete    | 2026-05-20 |
 | 2 | Data Layer | Parsers, spawn safety, lock-guarded writes + unit tests | DAT-01..07, TST-01..03 | 5 |
 | 3 | API Routes | 5 Next.js API routes + integration tests | API-01..05, TST-04 | 4 |
 | 4 | Components | Magic MCP raw + motion-wrapped components + tests | COM-01..04, TST-05 | 4 |
@@ -30,9 +30,9 @@
 
 **Worktree parallelization**: Sequential — must precede all other phases
 
-**Plans:** 2 plans
-- [ ] 01-01-PLAN.md — Scaffold Next.js 15 + Tailwind v4 DESIGN.md tokens + Y2K smoke page (FND-01, FND-02)
-- [ ] 01-02-PLAN.md — Vitest + Playwright + test-all.mjs --dashboard integration; verify santifer compatibility (FND-03, FND-04)
+**Plans:** 2/2 plans complete
+- [x] 01-01-PLAN.md — Scaffold Next.js 15 + Tailwind v4 DESIGN.md tokens + Y2K smoke page (FND-01, FND-02)
+- [x] 01-02-PLAN.md — Vitest + Playwright + test-all.mjs --dashboard integration; verify santifer compatibility (FND-03, FND-04)
 
 #### Phase 2: Data Layer
 
