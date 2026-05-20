@@ -19,7 +19,6 @@ import { fileURLToPath, pathToFileURL } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
 const QUICK = process.argv.includes('--quick');
-const DASHBOARD = process.argv.includes('--dashboard');
 
 let passed = 0;
 let failed = 0;
@@ -44,45 +43,6 @@ function fileExists(path) { return existsSync(join(ROOT, path)); }
 function readFile(path) { return readFileSync(join(ROOT, path), 'utf-8'); }
 
 console.log('\n🧪 career-ops test suite\n');
-
-// ── DASHBOARD MODE ───────────────────────────────────────────────
-// When `--dashboard` is passed, run only the Next.js dashboard tests
-// (Vitest + Playwright in dashboard/web/) and exit. Santifer's regular
-// test battery (sections 1-10 below) is skipped in this mode.
-if (DASHBOARD) {
-  console.log('Mode: --dashboard (vitest + playwright in dashboard/web/)\n');
-
-  const webDir = join(ROOT, 'dashboard', 'web');
-  if (!existsSync(webDir)) {
-    fail('dashboard/web/ does not exist — run Phase 1 Plan 01 first');
-    process.exit(1);
-  }
-
-  console.log('1. Vitest unit tests');
-  const vitestResult = run('npm', ['run', 'test:run'], { cwd: webDir, timeout: 120000, stdio: ['pipe', 'pipe', 'pipe'] });
-  if (vitestResult !== null) {
-    pass('vitest passed');
-  } else {
-    fail('vitest failed');
-  }
-
-  console.log('\n2. Playwright E2E tests');
-  const playwrightResult = run('npm', ['run', 'test:e2e'], { cwd: webDir, timeout: 180000, stdio: ['pipe', 'pipe', 'pipe'] });
-  if (playwrightResult !== null) {
-    pass('playwright passed');
-  } else {
-    fail('playwright failed');
-  }
-
-  console.log('\n' + '='.repeat(50));
-  console.log(`📊 Dashboard results: ${passed} passed, ${failed} failed`);
-  if (failed > 0) {
-    console.log('🔴 DASHBOARD TESTS FAILED\n');
-    process.exit(1);
-  }
-  console.log('🟢 Dashboard tests passed\n');
-  process.exit(0);
-}
 
 // ── 1. SYNTAX CHECKS ────────────────────────────────────────────
 
