@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: In Progress
-stopped_at: Completed 05-pages-e2e-01-PLAN.md
-last_updated: "2026-05-20T20:09:00Z"
+stopped_at: Completed 05-pages-e2e-02-PLAN.md
+last_updated: "2026-05-20T20:20:00Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 12
-  completed_plans: 10
-  percent: 83
+  completed_plans: 11
+  percent: 92
 ---
 
 # STATE — career-ops Dashboard
@@ -67,9 +67,12 @@ Existing context to leverage during planning:
 | 05-01 | x-pathname header strategy for active nav in layout — fallback to "/" if header absent; middleware injection deferred to 05-02 |
 | 05-01 | Direct parser invocation in page.tsx — avoids SSR self-fetch loop in Next 15 App Router |
 | 05-01 | pixelBootUp readonly spread — as const tuples spread to mutable arrays at Framer Motion call site |
+| 05-02 | filter empty-set = no constraint — toggling no chips shows all rows; avoids zero-rows footgun |
+| 05-02 | modal state owned by PipelineTable wrapper — selectedId drives conditional ListingModal render, no global store |
+| 05-02 | /api/file included for PDF iframe — pdfPath is absolute filesystem path; iframe can't load file:// URLs; route is traversal-safe + .pdf-only |
 
 ## Last Updated
 
-2026-05-20 — completed 05-01-PLAN.md (Sidebar + TodayHero + /today landing). 50/50 tests passing. Build exits 0.
+2026-05-20 — completed 05-02-PLAN.md (/pipeline page + PipelineTable + ListingModal + /api/file). 50/50 tests passing. Build exits 0.
 
-Stopped at: Completed 05-pages-e2e-01-PLAN.md
+Stopped at: Completed 05-pages-e2e-02-PLAN.md
