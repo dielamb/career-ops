@@ -114,6 +114,11 @@
 
 **Worktree parallelization**: After Phase 4 (depends on components)
 
+**Plans:** 3 plans
+- [ ] 05-01-PLAN.md — Sidebar (raw + motion) + /today server page + TodayHero (raw + motion) replacing Phase 1 smoke; pixelBootUp on hero (PAG-01, PAG-04, PAG-05)
+- [ ] 05-02-PLAN.md — /pipeline server page + PipelineTable (raw + motion, filter chips + search + sort) + ListingModal (raw + motion, side-by-side MD + PDF, action bar wired to /api/actions/*); optional /api/file passthrough for PDF iframe (PAG-02, PAG-03)
+- [ ] 05-03-PLAN.md — 3 Playwright E2E specs (apply-flow, mark-sent-lock, malformed-md) + 2 fixtures; full suite reports 4 passing E2E (TST-06)
+
 ---
 
 ## Coverage Validation
