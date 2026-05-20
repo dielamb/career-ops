@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 04-components-01-PLAN.md
-last_updated: "2026-05-20T18:04:30.591Z"
+status: In Progress
+stopped_at: Completed 05-pages-e2e-01-PLAN.md
+last_updated: "2026-05-20T20:09:00Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 12
-  completed_plans: 9
-  percent: 75
+  completed_plans: 10
+  percent: 83
 ---
 
 # STATE — career-ops Dashboard
@@ -64,9 +64,12 @@ Existing context to leverage during planning:
 | 03-02 | openInBrowse called directly — it already calls validateUrl internally; separate call creates divergent paths |
 | 03-02 | Surgical cell-replacement in mark-sent — preserves exact whitespace, avoids diff churn vs parse+reserialize |
 | 03-02 | LockedError → 423 Locked — client retries on user action; ENOENT → 503 for dev machines missing gstack browse |
+| 05-01 | x-pathname header strategy for active nav in layout — fallback to "/" if header absent; middleware injection deferred to 05-02 |
+| 05-01 | Direct parser invocation in page.tsx — avoids SSR self-fetch loop in Next 15 App Router |
+| 05-01 | pixelBootUp readonly spread — as const tuples spread to mutable arrays at Framer Motion call site |
 
 ## Last Updated
 
-2026-05-20 — completed 04-01-PLAN.md (framer-motion v12 + motion-presets + vitest jest-dom setup). 34/34 tests passing.
+2026-05-20 — completed 05-01-PLAN.md (Sidebar + TodayHero + /today landing). 50/50 tests passing. Build exits 0.
 
-Stopped at: Completed 04-components-01-PLAN.md
+Stopped at: Completed 05-pages-e2e-01-PLAN.md
