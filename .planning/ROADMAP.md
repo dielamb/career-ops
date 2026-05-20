@@ -52,9 +52,9 @@
 **Worktree parallelization**: After Phase 1; can run alongside Phase 3 (no shared files within `dashboard/web/lib/` after Phase 1 contract is set)
 
 **Plans:** 3 plans
-- [ ] 02-01-PLAN.md — Install Phase 2 deps (zod, gray-matter, proper-lockfile, remark, papaparse) + lib/schemas.ts with 4 Zod schemas + ParseError (DAT-07)
+- [x] 02-01-PLAN.md — Install Phase 2 deps (zod, gray-matter, proper-lockfile, remark, papaparse) + lib/schemas.ts with 4 Zod schemas + ParseError (DAT-07)
 - [ ] 02-02-PLAN.md — 3 MD parsers (applications/pipeline/reports) + 14 vitest tests with per-row error boundary (DAT-01, DAT-02, DAT-03, DAT-06, TST-01)
-- [ ] 02-03-PLAN.md — spawn-mjs (array-form + URL validator) + git-commit (proper-lockfile wrapper) + 9 vitest tests (DAT-04, DAT-05, TST-02, TST-03)
+- [x] 02-03-PLAN.md — spawn-mjs (array-form + URL validator) + git-commit (proper-lockfile wrapper) + 9 vitest tests (DAT-04, DAT-05, TST-02, TST-03)
 
 #### Phase 3: API Routes
 
