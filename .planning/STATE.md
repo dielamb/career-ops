@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: In Progress
-stopped_at: Completed 05-pages-e2e-02-PLAN.md
-last_updated: "2026-05-20T20:20:00Z"
+status: Complete
+stopped_at: Completed 05-pages-e2e-03-PLAN.md (FINAL PLAN OF MVP)
+last_updated: "2026-05-20T20:30:00Z"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 12
-  completed_plans: 11
-  percent: 92
+  completed_plans: 12
+  percent: 100
 ---
 
 # STATE — career-ops Dashboard
@@ -70,9 +70,11 @@ Existing context to leverage during planning:
 | 05-02 | filter empty-set = no constraint — toggling no chips shows all rows; avoids zero-rows footgun |
 | 05-02 | modal state owned by PipelineTable wrapper — selectedId drives conditional ListingModal render, no global store |
 | 05-02 | /api/file included for PDF iframe — pdfPath is absolute filesystem path; iframe can't load file:// URLs; route is traversal-safe + .pdf-only |
+| 05-03 | apply-flow uses real pipeline rows + wildcard /api/listing/** mock — server components bypass page.route; only client-side fetches are interceptable |
+| 05-03 | snapshot-restore for malformed-md — only way to inject SSR parse errors without touching app layer; workers:1 makes file-swap safe |
 
 ## Last Updated
 
-2026-05-20 — completed 05-02-PLAN.md (/pipeline page + PipelineTable + ListingModal + /api/file). 50/50 tests passing. Build exits 0.
+2026-05-20 — completed 05-03-PLAN.md (3 Playwright E2E specs: apply-flow, mark-sent-lock, malformed-md). 50 unit + 4 E2E = 54 total green. Build exits 0. TST-06 closed. MVP COMPLETE.
 
-Stopped at: Completed 05-pages-e2e-02-PLAN.md
+Stopped at: Completed 05-pages-e2e-03-PLAN.md (FINAL PLAN OF MVP)
