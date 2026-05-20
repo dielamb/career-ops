@@ -93,6 +93,10 @@
 
 **Worktree parallelization**: After Phase 3
 
+**Plans:** 2 plans
+- [ ] 04-01-PLAN.md — Install framer-motion + testing-library, create lib/motion-presets.ts (5 variants), wire vitest setupFiles for jest-dom (COM-03)
+- [ ] 04-02-PLAN.md — 4 raw components + 4 motion wrappers + 4 RTL tests (COM-01, COM-02, COM-04, TST-05)
+
 #### Phase 5: Pages + E2E
 
 **Goal**: `/today`, `/pipeline`, and listing modal ship with full DESIGN.md aesthetic; 3 Playwright E2E tests cover critical user flows.
