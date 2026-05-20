@@ -17,7 +17,7 @@
 - [ ] **DAT-04**: `lib/spawn-mjs.ts` uses `spawn(cmd, [args])` array form; URL validator (`new URL` + http/https only)
 - [ ] **DAT-05**: `lib/git-commit.ts` wraps writes in `proper-lockfile` with stale-lock recovery
 - [ ] **DAT-06**: Per-row error boundary in parsers — bad row skipped + toast warning, never crash dashboard
-- [ ] **DAT-07**: `lib/schemas.ts` defines shared Zod schemas (Application, PipelineEntry, Report)
+- [x] **DAT-07**: `lib/schemas.ts` defines shared Zod schemas (Application, PipelineEntry, Report)
 
 ### API Routes (API)
 
