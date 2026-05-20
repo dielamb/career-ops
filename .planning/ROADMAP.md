@@ -30,6 +30,10 @@
 
 **Worktree parallelization**: Sequential — must precede all other phases
 
+**Plans:** 2 plans
+- [ ] 01-01-PLAN.md — Scaffold Next.js 15 + Tailwind v4 DESIGN.md tokens + Y2K smoke page (FND-01, FND-02)
+- [ ] 01-02-PLAN.md — Vitest + Playwright + test-all.mjs --dashboard integration; verify santifer compatibility (FND-03, FND-04)
+
 #### Phase 2: Data Layer
 
 **Goal**: All MD/TSV parsers, child_process spawn safety, and lock-guarded writes implemented and unit-tested.
