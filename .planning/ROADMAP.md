@@ -6,7 +6,7 @@
 |---|-------|------|--------------|------------------|
 | 1 | Foundation | 2/2 | Complete    | 2026-05-20 |
 | 2 | Data Layer | 3/3 | Complete    | 2026-05-20 |
-| 3 | API Routes | 5 Next.js API routes + integration tests | API-01..05, TST-04 | 4 |
+| 3 | API Routes | 2/2 | Complete    | 2026-05-20 |
 | 4 | Components | Magic MCP raw + motion-wrapped components + tests | COM-01..04, TST-05 | 4 |
 | 5 | Pages + E2E | /today, /pipeline, listing modal + 3 Playwright E2E | PAG-01..05, TST-06 | 5 |
 
@@ -73,9 +73,9 @@
 
 **Worktree parallelization**: After Phase 2
 
-**Plans:** 2 plans
-- [ ] 03-01-PLAN.md — GET routes (applications, pipeline, listing/[id]) + shared api-helpers/api-paths + vitest node-env config + 6 tests (API-01, API-02, API-03, TST-04 partial)
-- [ ] 03-02-PLAN.md — POST action routes (apply with Zod+spawn-mjs, mark-sent with Zod+lockedWrite) + 4 tests (API-04, API-05, TST-04 partial)
+**Plans:** 2/2 plans complete
+- [x] 03-01-PLAN.md — GET routes (applications, pipeline, listing/[id]) + shared api-helpers/api-paths + vitest node-env config + 6 tests (API-01, API-02, API-03, TST-04 partial)
+- [x] 03-02-PLAN.md — POST action routes (apply with Zod+spawn-mjs, mark-sent with Zod+lockedWrite) + 4 tests (API-04, API-05, TST-04 partial)
 
 #### Phase 4: Components
 
