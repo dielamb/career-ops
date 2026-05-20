@@ -7,7 +7,7 @@
 | 1 | Foundation | 2/2 | Complete    | 2026-05-20 |
 | 2 | Data Layer | 3/3 | Complete    | 2026-05-20 |
 | 3 | API Routes | 2/2 | Complete    | 2026-05-20 |
-| 4 | Components | Magic MCP raw + motion-wrapped components + tests | COM-01..04, TST-05 | 4 |
+| 4 | Components | 2/2 | Complete    | 2026-05-20 |
 | 5 | Pages + E2E | /today, /pipeline, listing modal + 3 Playwright E2E | PAG-01..05, TST-06 | 5 |
 
 ---
@@ -93,9 +93,9 @@
 
 **Worktree parallelization**: After Phase 3
 
-**Plans:** 2 plans
-- [ ] 04-01-PLAN.md — Install framer-motion + testing-library, create lib/motion-presets.ts (5 variants), wire vitest setupFiles for jest-dom (COM-03)
-- [ ] 04-02-PLAN.md — 4 raw components + 4 motion wrappers + 4 RTL tests (COM-01, COM-02, COM-04, TST-05)
+**Plans:** 2/2 plans complete
+- [x] 04-01-PLAN.md — Install framer-motion + testing-library, create lib/motion-presets.ts (5 variants), wire vitest setupFiles for jest-dom (COM-03)
+- [x] 04-02-PLAN.md — 4 raw components + 4 motion wrappers + 4 RTL tests (COM-01, COM-02, COM-04, TST-05)
 
 #### Phase 5: Pages + E2E
 
