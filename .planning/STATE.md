@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-last_updated: "2026-05-20T17:15:00.885Z"
+last_updated: "2026-05-20T19:30:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # STATE — career-ops Dashboard
@@ -56,6 +56,16 @@ Existing context to leverage during planning:
 - plan_check: true
 - verifier: true
 
+## Decisions
+
+| Phase | Decision |
+|-------|----------|
+| 03-02 | openInBrowse called directly — it already calls validateUrl internally; separate call creates divergent paths |
+| 03-02 | Surgical cell-replacement in mark-sent — preserves exact whitespace, avoids diff churn vs parse+reserialize |
+| 03-02 | LockedError → 423 Locked — client retries on user action; ENOENT → 503 for dev machines missing gstack browse |
+
 ## Last Updated
 
-2026-05-20 after `/gsd-new-project --auto` initialization.
+2026-05-20 — completed 03-02-PLAN.md (POST /api/actions/apply + POST /api/actions/mark-sent). 34/34 tests passing.
+
+Stopped at: Completed 03-api-routes-02-PLAN.md
