@@ -52,7 +52,7 @@ export default function AuthPage() {
 
         {/* LEFT: Brand panel */}
         <section
-          className="relative flex flex-col justify-center px-[52px] py-12 bg-bg overflow-hidden border-r-0 md:border-r-[2.5px] md:border-ink"
+          className="relative flex flex-col justify-center px-6 md:px-[52px] py-12 bg-bg overflow-hidden border-r-0 md:border-r-[2.5px] md:border-ink"
           aria-label="career-ops branding"
         >
           {/* SVG geometry layer — viewBox 600x900 matches brand area proportions */}
@@ -111,23 +111,23 @@ export default function AuthPage() {
             </div>
 
             {/* EVALUATE · APPLY · HIRED tags */}
-            <div className="flex items-baseline gap-3 flex-wrap mt-9" aria-label="pipeline steps">
+            <div className="flex flex-col md:flex-row md:items-baseline gap-2 md:gap-3 mt-9" aria-label="pipeline steps">
               <span
-                className="font-display font-black text-ink inline-block px-[10px] py-[3px] text-[36px] leading-none tracking-[-0.5px] shadow-[3px_3px_0_var(--color-ink)] bg-cyber"
+                className="font-display font-black text-ink inline-block px-[10px] py-[3px] text-[28px] md:text-[36px] leading-none tracking-[-0.5px] shadow-[2px_2px_0_var(--color-ink)] md:shadow-[3px_3px_0_var(--color-ink)] bg-cyber"
                 style={{ fontVariationSettings: '"wdth" 60' }}
               >
                 EVALUATE
               </span>
-              <span className="font-mono text-base text-ink-muted" aria-hidden="true">·</span>
+              <span className="hidden md:inline font-mono text-base text-ink-muted" aria-hidden="true">·</span>
               <span
-                className="font-display font-black text-ink inline-block px-[10px] py-[3px] text-[36px] leading-none tracking-[-0.5px] shadow-[3px_3px_0_var(--color-ink)] bg-acid"
+                className="font-display font-black text-ink inline-block px-[10px] py-[3px] text-[28px] md:text-[36px] leading-none tracking-[-0.5px] shadow-[2px_2px_0_var(--color-ink)] md:shadow-[3px_3px_0_var(--color-ink)] bg-acid"
                 style={{ fontVariationSettings: '"wdth" 60' }}
               >
                 APPLY
               </span>
-              <span className="font-mono text-base text-ink-muted" aria-hidden="true">·</span>
+              <span className="hidden md:inline font-mono text-base text-ink-muted" aria-hidden="true">·</span>
               <span
-                className="font-display font-black text-ink inline-block px-[10px] py-[3px] text-[36px] leading-none tracking-[-0.5px] shadow-[3px_3px_0_var(--color-ink)] bg-magenta"
+                className="font-display font-black text-ink inline-block px-[10px] py-[3px] text-[28px] md:text-[36px] leading-none tracking-[-0.5px] shadow-[2px_2px_0_var(--color-ink)] md:shadow-[3px_3px_0_var(--color-ink)] bg-magenta"
                 style={{ fontVariationSettings: '"wdth" 60' }}
               >
                 HIRED
