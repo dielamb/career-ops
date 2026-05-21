@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__lean-ctx__ctx_read",
+      "mcp__screen-vision__capture_region",
+      "Bash(npm run doctor)",
+      "Bash(node cv-sync-check.mjs)",
+      "Bash(node merge-tracker.mjs)",
+      "Bash(node verify-pipeline.mjs)",
+      "Bash(node analyze-patterns.mjs)",
+      "Bash(node followup-cadence.mjs)",
+      "Bash(node update-system.mjs check)"
+    ]
+  }
+}

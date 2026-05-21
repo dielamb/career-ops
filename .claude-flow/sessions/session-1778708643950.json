@@ -1,0 +1,14 @@
+{
+  "id": "session-1778708643950",
+  "startedAt": "2026-05-13T21:44:03.950Z",
+  "cwd": "/Users/michalmaciejewski/Desktop/jobs/career-ops",
+  "context": {},
+  "metrics": {
+    "edits": 0,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "endedAt": "2026-05-13T21:45:16.626Z",
+  "duration": 72676
+}
