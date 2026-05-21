@@ -42,6 +42,11 @@ function detectApi(company) {
 
   const url = company.careers_url || '';
 
+  // designsystems.jobs — curated HTML board, parsed directly (no ATS API)
+  if (url.includes('designsystems.jobs')) {
+    return { type: 'dsj', url: 'https://designsystems.jobs/' };
+  }
+
   // Ashby
   const ashbyMatch = url.match(/jobs\.ashbyhq\.com\/([^/?#]+)/);
   if (ashbyMatch) {
@@ -118,6 +123,41 @@ async function fetchJson(url) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function fetchHtml(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS * 3);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; career-ops-scanner/1.0)' },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Parse designsystems.jobs HTML listing page.
+// Extracts job-item links, h2 titles, and company divs in parallel arrays
+// that are guaranteed 1:1 aligned by the site's template structure.
+// First 3 <h2> are filter column labels ("Role", "Type", "Location") — skipped.
+function parseDsj(html) {
+  const hrefs = [...html.matchAll(/<a href="([^"]+)"[^>]*class="job-item"/g)].map(m => m[1]);
+  const titles = [...html.matchAll(/<h2>([^<]+)<\/h2>/g)].map(m => m[1].trim()).slice(3);
+  const companies = [...html.matchAll(/<div class="company">([^<]+)<\/div>/g)].map(m => m[1].trim());
+
+  const count = Math.min(hrefs.length, titles.length, companies.length);
+  const results = [];
+  for (let i = 0; i < count; i++) {
+    const url = hrefs[i].split('?ref=')[0].split('&ref=')[0];
+    // Skip entries where href was only the ref param (no real ATS URL)
+    if (!url.startsWith('https://') && !url.startsWith('http://')) continue;
+    results.push({ title: titles[i], url, company: companies[i], location: '' });
+  }
+  return results;
 }
 
 // ── Title filter ────────────────────────────────────────────────────
@@ -288,14 +328,28 @@ async function main() {
   let totalDupes = 0;
   const newOffers = [];
   const errors = [];
+  let completedCount = 0;
+  const total = targets.length;
+
+  // Emit machine-readable scan start for progress tracking
+  console.log(`[SCAN_START] total=${total}`);
 
   const tasks = targets.map(company => async () => {
     const { type, url } = company._api;
+    const seq = ++completedCount;
+    console.log(`[SCAN_PROGRESS] ${seq}/${total} ${company.name}`);
     try {
-      const json = await fetchJson(url);
-      const jobs = PARSERS[type](json, company.name);
+      let jobs;
+      if (type === 'dsj') {
+        const html = await fetchHtml(url);
+        jobs = parseDsj(html);
+      } else {
+        const json = await fetchJson(url);
+        jobs = PARSERS[type](json, company.name);
+      }
       totalFound += jobs.length;
 
+      let companyNew = 0;
       for (const job of jobs) {
         if (!titleFilter(job.title)) {
           totalFiltered++;
@@ -310,12 +364,14 @@ async function main() {
           totalDupes++;
           continue;
         }
-        // Mark as seen to avoid intra-scan dupes
         seenUrls.add(job.url);
         seenCompanyRoles.add(key);
         newOffers.push({ ...job, source: `${type}-api` });
+        companyNew++;
       }
+      console.log(`[SCAN_DONE] ${seq}/${total} ${company.name} found=${jobs.length} new=${companyNew}`);
     } catch (err) {
+      console.log(`[SCAN_ERROR] ${seq}/${total} ${company.name} err=${err.message}`);
       errors.push({ company: company.name, error: err.message });
     }
   });
