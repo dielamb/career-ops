@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ActiveScans as RawActiveScans, type ActiveScan } from './raw/ActiveScans';
 import { fadeUp } from '@/lib/motion-presets';
+import type { ScanStatusResponse } from '@/app/api/actions/scan/status/route';
 
 const POLL_MS = 2000;
 const SCAN_STARTED_EVENT = 'careerops:scan-started';
@@ -14,6 +15,10 @@ export function ActiveScans() {
   const [logLoading, setLogLoading] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
 
+  // Scan.mjs run progress
+  const [scanLogPath, setScanLogPath] = useState<string | null>(null);
+  const [scanStatus, setScanStatus] = useState<ScanStatusResponse | null>(null);
+
   const refresh = useCallback(async () => {
     try {
       const res = await fetch('/api/scans/active', { cache: 'no-store' });
@@ -23,11 +28,20 @@ export function ActiveScans() {
     } catch { /* ignore */ }
   }, []);
 
+  const pollScanStatus = useCallback(async (path: string) => {
+    try {
+      const res = await fetch(`/api/actions/scan/status?logPath=${encodeURIComponent(path)}`, { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json() as ScanStatusResponse;
+      setScanStatus(data);
+      if (data.done) setScanLogPath(null);
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     setMounted(true);
     refresh();
     const id = setInterval(refresh, POLL_MS);
-    // AddUrlWidget dispatches this immediately after POST /api/actions/add-url returns 202.
     const onScanStarted = () => { refresh(); };
     window.addEventListener(SCAN_STARTED_EVENT, onScanStarted);
     return () => {
@@ -35,6 +49,25 @@ export function ActiveScans() {
       window.removeEventListener(SCAN_STARTED_EVENT, onScanStarted);
     };
   }, [refresh]);
+
+  // Listen for scan.mjs run start
+  useEffect(() => {
+    const onStart = (e: Event) => {
+      const { logPath } = (e as CustomEvent<{ logPath: string }>).detail;
+      setScanLogPath(logPath);
+      setScanStatus(null);
+    };
+    window.addEventListener('careerops:scan-started', onStart);
+    return () => window.removeEventListener('careerops:scan-started', onStart);
+  }, []);
+
+  // Poll scan.mjs status every 2s while running
+  useEffect(() => {
+    if (!scanLogPath) return;
+    pollScanStatus(scanLogPath);
+    const id = setInterval(() => pollScanStatus(scanLogPath), POLL_MS);
+    return () => clearInterval(id);
+  }, [scanLogPath, pollScanStatus]);
 
   const handleOpenLog = useCallback(async (path: string) => {
     setOpenLogPath(path);
@@ -55,11 +88,10 @@ export function ActiveScans() {
   }, []);
 
   const handleDismiss = useCallback(async (ts: number) => {
-    // Optimistic remove first so the UI feels instant.
     setScans((prev) => prev.filter((s) => s.ts !== ts));
     try {
       await fetch(`/api/scans/active?ts=${ts}`, { method: 'DELETE' });
-    } catch { /* ignore — file may not exist; backend is idempotent */ }
+    } catch { /* ignore */ }
   }, []);
 
   const handleCloseLog = useCallback(() => {
@@ -67,7 +99,6 @@ export function ActiveScans() {
     setLogContent('');
   }, []);
 
-  // ESC closes log modal
   useEffect(() => {
     if (!openLogPath) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') handleCloseLog(); };
@@ -75,8 +106,10 @@ export function ActiveScans() {
     return () => window.removeEventListener('keydown', handler);
   }, [openLogPath, handleCloseLog]);
 
-  // Render nothing on SSR to avoid hydration mismatch — show widget once mounted.
   if (!mounted) return null;
+
+  // Build scan progress node to inject into the raw widget
+  const scanProgress = (scanStatus || scanLogPath) ? buildScanProgressNode(scanStatus) : undefined;
 
   return (
     <>
@@ -86,7 +119,13 @@ export function ActiveScans() {
         animate={fadeUp.animate}
         transition={fadeUp.transition}
       >
-        <RawActiveScans scans={scans} onOpenLog={handleOpenLog} onDismiss={handleDismiss} showWhenEmpty />
+        <RawActiveScans
+          scans={scans}
+          onOpenLog={handleOpenLog}
+          onDismiss={handleDismiss}
+          showWhenEmpty
+          scanProgress={scanProgress}
+        />
       </motion.div>
 
       <AnimatePresence>
@@ -128,5 +167,70 @@ export function ActiveScans() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+function buildScanProgressNode(status: ScanStatusResponse | null): React.ReactNode {
+  const prog = status?.progress;
+  const pct = prog ? Math.round((prog.completed / prog.total) * 100) : 0;
+  const current = status?.current ?? [];
+  const newOffers = status?.recent?.filter(r => (r.new ?? 0) > 0) ?? [];
+  const done = status?.done ?? false;
+
+  return (
+    <div
+      data-testid="scan-run-progress"
+      className="border-[1.5px] border-cyber bg-paper p-sm mb-md flex flex-col gap-sm"
+    >
+      {/* Status line */}
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-xs uppercase tracking-wider text-cyber">
+          {done ? '[scan complete]' : '[scanning portals…]'}
+        </span>
+        {prog && (
+          <span className="font-mono text-xs text-ink-muted">
+            {prog.completed}/{prog.total} companies
+          </span>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      {prog && (
+        <div className="w-full h-[6px] border border-ink-muted bg-paper overflow-hidden">
+          <div
+            className="h-full bg-cyber transition-all duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
+
+      {/* Currently in-flight companies */}
+      {!done && current.length > 0 && (
+        <p className="font-mono text-[11px] text-ink-muted truncate">
+          scanning: {current.slice(0, 4).join(', ')}{current.length > 4 ? ` +${current.length - 4}` : ''}
+        </p>
+      )}
+
+      {/* Recent companies with new offers */}
+      {newOffers.length > 0 && (
+        <ul className="flex flex-col gap-[2px] max-h-[96px] overflow-y-auto">
+          {newOffers.map((entry) => (
+            <li key={`${entry.company}-${entry.seq}`} className="flex items-center gap-sm font-mono text-[11px]">
+              <span className="font-bold text-ink bg-acid px-[4px]">+{entry.new}</span>
+              <span className="text-ink truncate">{entry.company}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Done summary */}
+      {done && (
+        <p className="font-mono text-xs font-bold text-ink">
+          {status?.newOffers != null
+            ? `${status.newOffers} new offer${status.newOffers !== 1 ? 's' : ''} added to pipeline`
+            : 'Scan complete — check pipeline'}
+        </p>
+      )}
+    </div>
   );
 }

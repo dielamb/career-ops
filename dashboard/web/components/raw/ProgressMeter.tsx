@@ -24,7 +24,7 @@ export function ProgressMeter({ stats, total }: ProgressMeterProps) {
   return (
     <section
       data-testid="progress-meter"
-      className="bg-paper border-[2.5px] border-ink shadow-[6px_6px_0_var(--color-ink)] rounded-lg p-xl"
+      className="bg-paper border-[2.5px] border-ink shadow-[6px_6px_0_var(--color-ink)] rounded-none p-xl"
     >
       <div className="grid grid-cols-4 gap-md mb-lg">
         {stats.map((stat) => {

@@ -1,15 +1,13 @@
-import type { PipelineEntry } from '@/lib/schemas';
+import type { EnrichedPipelineEntry } from '@/lib/schemas';
 
-/** Application status values that can be set via inline dropdown. */
 export const APPLICATION_STATUSES = [
   'Evaluated', 'Applied', 'Responded', 'Interview', 'Offer', 'Rejected', 'Discarded',
 ] as const;
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
 export interface PipelineRowAction {
-  /** id used by ListingModal — derived from row.num if available, else null. */
   id: string | null;
-  entry: PipelineEntry;
+  entry: EnrichedPipelineEntry;
 }
 
 export interface StatusChangeAction {
@@ -17,210 +15,226 @@ export interface StatusChangeAction {
   status: ApplicationStatus;
 }
 
+export type SortCol = 'company' | 'title' | 'score' | 'num' | 'firstSeen' | 'evalDate';
+export type SortDir = 'asc' | 'desc';
+
 export interface PipelineTableProps {
-  rows: PipelineEntry[];
-  /** Active state filter set; empty = all states allowed. */
-  activeStates: ReadonlySet<PipelineEntry['state']>;
-  /** Active source-hostname filter; empty = all hosts allowed. */
-  activeSources: ReadonlySet<string>;
-  /** Minimum score filter, 0..5. */
-  minScore: number;
-  /** Search term (case-insensitive substring). */
+  rows: EnrichedPipelineEntry[];
+  sortCol: SortCol;
+  sortDir: SortDir;
   search: string;
-  /** All available source hostnames (for chip rendering). */
-  allSources: ReadonlyArray<string>;
-  onToggleState: (state: PipelineEntry['state']) => void;
-  onToggleSource: (host: string) => void;
-  onMinScoreChange: (score: number) => void;
+  minScore: number;
+  onSortChange: (col: SortCol) => void;
   onSearchChange: (term: string) => void;
+  onMinScoreChange: (score: number) => void;
   onRowClick: (action: PipelineRowAction) => void;
-  /** id of the row currently considered "selected" (for highlighting). */
   selectedId: string | null;
-  /** Called when inline status dropdown changes. */
   onStatusChange?: (action: StatusChangeAction) => void;
-  /** Map of id -> optimistic status (overrides display while saving). */
   optimisticStatuses?: ReadonlyMap<string, ApplicationStatus>;
 }
 
-const STATE_ORDER: PipelineEntry['state'][] = ['evaluated', 'pending', 'skipped', 'error'];
+// Row background tint per state
+const STATE_ROW_CLASS: Record<EnrichedPipelineEntry['state'], string> = {
+  evaluated: 'bg-cyber/[0.04]',
+  pending:   '',
+  skipped:   'bg-ink/[0.03]',
+  error:     'bg-magenta/[0.04]',
+};
 
-function hostnameOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return 'unknown';
-  }
+const STATE_COUNTS_LABEL: Record<EnrichedPipelineEntry['state'], string> = {
+  evaluated: 'evaluated',
+  pending:   'pending',
+  skipped:   'skipped',
+  error:     'error',
+};
+
+function deriveId(entry: EnrichedPipelineEntry): string | null {
+  return entry.num != null ? String(entry.num) : null;
 }
 
-function deriveId(entry: PipelineEntry): string | null {
-  return entry.num != null ? String(entry.num) : null;
+function ThSort({
+  col, label, activeCol, sortDir, onSort, className = '',
+}: {
+  col: SortCol; label: string; activeCol: SortCol; sortDir: SortDir;
+  onSort: (c: SortCol) => void; className?: string;
+}) {
+  const active = col === activeCol;
+  return (
+    <th
+      className={`text-left p-sm font-mono text-xs uppercase cursor-pointer select-none hover:text-cyber ${className}`}
+      onClick={() => onSort(col)}
+    >
+      {label}
+      <span className={'ml-[3px]' + (active ? '' : ' opacity-30')}>
+        {active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+      </span>
+    </th>
+  );
+}
+
+function formatDate(iso: string | null): string {
+  if (!iso) return '—';
+  // YYYY-MM-DD → DD MMM YY
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
 }
 
 export function PipelineTable(props: PipelineTableProps) {
   const {
-    rows, activeStates, activeSources, minScore, search,
-    allSources, onToggleState, onToggleSource, onMinScoreChange, onSearchChange,
+    rows, sortCol, sortDir, search, minScore,
+    onSortChange, onSearchChange, onMinScoreChange,
     onRowClick, selectedId, onStatusChange, optimisticStatuses,
   } = props;
 
   const term = search.trim().toLowerCase();
+
+  const counts = rows.reduce<Record<EnrichedPipelineEntry['state'], number>>(
+    (acc, r) => { acc[r.state]++; return acc; },
+    { pending: 0, evaluated: 0, skipped: 0, error: 0 },
+  );
+
   const filtered = rows.filter((r) => {
-    if (activeStates.size > 0 && !activeStates.has(r.state)) return false;
-    const host = hostnameOf(r.url);
-    if (activeSources.size > 0 && !activeSources.has(host)) return false;
-    if ((r.score ?? 0) < minScore) return false;
-    if (term.length > 0) {
-      const hay = `${r.company ?? ''} ${r.title ?? ''}`.toLowerCase();
+    if (minScore > 0 && r.state === 'evaluated' && (r.score ?? 0) < minScore) return false;
+    if (term) {
+      const hay = `${r.company ?? ''} ${r.title ?? ''} ${r.appNotes ?? ''}`.toLowerCase();
       if (!hay.includes(term)) return false;
     }
     return true;
   });
 
-  const sorted = [...filtered].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const sorted = [...filtered].sort((a, b) => {
+    let cmp = 0;
+    if (sortCol === 'score')     cmp = (a.score ?? -1) - (b.score ?? -1);
+    else if (sortCol === 'num')  cmp = (a.num ?? 0) - (b.num ?? 0);
+    else if (sortCol === 'company')  cmp = (a.company ?? '').localeCompare(b.company ?? '');
+    else if (sortCol === 'title')    cmp = (a.title ?? '').localeCompare(b.title ?? '');
+    else if (sortCol === 'firstSeen') cmp = (a.firstSeen ?? '').localeCompare(b.firstSeen ?? '');
+    else if (sortCol === 'evalDate')  cmp = (a.evalDate ?? '').localeCompare(b.evalDate ?? '');
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
 
   return (
     <div data-testid="pipeline-table-root" className="flex flex-col gap-lg">
-      <header className="flex flex-col gap-md">
-        <h1
-          className="font-display text-4xl text-ink"
-          style={{ fontVariationSettings: '"wdth" 60', fontWeight: 800 }}
-        >
+
+      {/* Header */}
+      <header className="flex flex-col gap-xs">
+        <h1 className="font-display text-4xl text-ink" style={{ fontVariationSettings: '"wdth" 60', fontWeight: 800 }}>
           Pipeline.
         </h1>
         <p className="font-mono text-xs uppercase tracking-wider text-ink-muted">
-          // {sorted.length} of {rows.length} candidates
+          {(Object.entries(counts) as [EnrichedPipelineEntry['state'], number][])
+            .filter(([, n]) => n > 0)
+            .map(([s, n]) => `${n} ${STATE_COUNTS_LABEL[s]}`)
+            .join(' · ')}
+          {' '}·{' '}{sorted.length} shown
         </p>
       </header>
 
-      <section data-testid="filters" className="flex flex-col gap-sm">
+      {/* Search + score filter */}
+      <div className="flex flex-wrap items-center gap-md">
         <input
           type="search"
           data-testid="pipeline-search"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search company or role..."
-          className="w-full max-w-[480px] px-md py-sm bg-paper border-[2.5px] border-ink font-body text-base rounded-none focus:outline-none focus:border-cyber"
+          placeholder="Search company, role, or notes…"
+          className="w-full max-w-[400px] px-md py-sm bg-paper border-[2.5px] border-ink font-body text-base rounded-none focus:outline-none focus:border-cyber"
         />
-
-        <div data-testid="filter-state-chips" className="flex flex-wrap gap-xs">
-          <span className="font-mono text-xs uppercase text-ink-muted self-center mr-sm">// state:</span>
-          {STATE_ORDER.map((s) => {
-            const active = activeStates.has(s);
-            return (
-              <button
-                key={s}
-                type="button"
-                data-testid={`chip-state-${s}`}
-                data-active={active ? 'true' : 'false'}
-                onClick={() => onToggleState(s)}
-                className={
-                  active
-                    ? 'px-sm py-xs bg-cyber text-ink border-[1.5px] border-ink font-mono text-xs uppercase tracking-wider rounded-none'
-                    : 'px-sm py-xs bg-paper text-ink border-[1.5px] border-ink-muted font-mono text-xs uppercase tracking-wider rounded-none'
-                }
-              >
-                {s}
-              </button>
-            );
-          })}
-        </div>
-
-        <div data-testid="filter-source-chips" className="flex flex-wrap gap-xs">
-          <span className="font-mono text-xs uppercase text-ink-muted self-center mr-sm">// source:</span>
-          {allSources.map((host) => {
-            const active = activeSources.has(host);
-            return (
-              <button
-                key={host}
-                type="button"
-                data-testid={`chip-source-${host}`}
-                data-active={active ? 'true' : 'false'}
-                onClick={() => onToggleSource(host)}
-                className={
-                  active
-                    ? 'px-sm py-xs bg-acid text-ink border-[1.5px] border-ink font-mono text-xs uppercase tracking-wider rounded-none'
-                    : 'px-sm py-xs bg-paper text-ink border-[1.5px] border-ink-muted font-mono text-xs uppercase tracking-wider rounded-none'
-                }
-              >
-                {host}
-              </button>
-            );
-          })}
-        </div>
-
-        <label className="flex items-center gap-sm font-mono text-xs uppercase text-ink-muted">
-          // min score: <span data-testid="min-score-value">{minScore.toFixed(1)}</span>
+        <label className="flex items-center gap-sm font-mono text-xs uppercase text-ink-muted whitespace-nowrap">
+          min score:{' '}
+          <span data-testid="min-score-value" className="text-ink font-bold">{minScore.toFixed(1)}</span>
           <input
             type="range"
             data-testid="min-score-slider"
-            min={0}
-            max={5}
-            step={0.1}
+            min={0} max={5} step={0.1}
             value={minScore}
             onChange={(e) => onMinScoreChange(Number(e.target.value))}
-            className="w-[240px] accent-magenta"
+            className="w-[140px] accent-magenta"
           />
         </label>
-      </section>
+      </div>
 
-      <table
-        data-testid="pipeline-table"
-        className="w-full bg-paper border-[2.5px] border-ink shadow-[6px_6px_0_var(--color-ink)] rounded-none border-collapse"
-      >
-        <thead className="bg-ink text-bg">
-          <tr>
-            <th className="text-left p-sm font-mono text-xs uppercase">#</th>
-            <th className="text-left p-sm font-mono text-xs uppercase">Company</th>
-            <th className="text-left p-sm font-mono text-xs uppercase">Title</th>
-            <th className="text-left p-sm font-mono text-xs uppercase">Score</th>
-            <th className="text-left p-sm font-mono text-xs uppercase">State</th>
-            <th className="text-left p-sm font-mono text-xs uppercase">App Status</th>
-            <th className="text-left p-sm font-mono text-xs uppercase">Source</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.length === 0 ? (
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table
+          data-testid="pipeline-table"
+          className="w-full bg-paper border-[2.5px] border-ink shadow-[6px_6px_0_var(--color-ink)] rounded-none border-collapse"
+        >
+          <thead className="bg-ink text-bg">
             <tr>
-              <td colSpan={7} data-testid="pipeline-empty" className="p-md text-center font-body text-ink-muted">
-                No candidates match the current filters.
-              </td>
+              <ThSort col="company" label="Company / Title" activeCol={sortCol} sortDir={sortDir} onSort={onSortChange} />
+              <ThSort col="score"   label="Score"  activeCol={sortCol} sortDir={sortDir} onSort={onSortChange} className="w-[5rem]" />
+              <th className="text-left p-sm font-mono text-xs uppercase w-[9rem]">Status</th>
+              <th className="text-left p-sm font-mono text-xs uppercase">Notes</th>
+              <ThSort col="firstSeen" label="Found / Eval" activeCol={sortCol} sortDir={sortDir} onSort={onSortChange} className="w-[8rem]" />
+              <th className="text-left p-sm font-mono text-xs uppercase w-[5rem]">JD</th>
             </tr>
-          ) : (
-            sorted.map((r, idx) => {
+          </thead>
+          <tbody>
+            {sorted.length === 0 ? (
+              <tr>
+                <td colSpan={6} data-testid="pipeline-empty" className="p-md text-center font-body text-ink-muted">
+                  {term ? 'No matches.' : 'Nothing here.'}
+                </td>
+              </tr>
+            ) : sorted.map((r, idx) => {
               const id = deriveId(r);
               const isSelected = id != null && id === selectedId;
-              const host = hostnameOf(r.url);
+              const appStatus = id != null ? optimisticStatuses?.get(id) : undefined;
+              const rowTint = STATE_ROW_CLASS[r.state];
+              const isEvaluated = r.state === 'evaluated';
+              const isSkippedOrError = r.state === 'skipped' || r.state === 'error';
+
               return (
                 <tr
                   key={`${id ?? 'x'}-${idx}`}
                   data-testid={`pipeline-row-${id ?? idx}`}
                   data-id={id ?? ''}
+                  data-state={r.state}
                   data-selected={isSelected ? 'true' : 'false'}
                   onClick={() => onRowClick({ id, entry: r })}
                   className={
-                    'cursor-pointer border-t border-ink-muted hover:bg-cyber-soft ' +
-                    (isSelected ? 'bg-acid-soft' : '')
+                    'border-t border-ink-muted cursor-pointer hover:bg-cyber/[0.08] transition-colors ' +
+                    rowTint + ' ' +
+                    (isSelected ? 'outline outline-[2px] outline-cyber' : '')
                   }
                 >
-                  <td className="p-sm font-mono text-xs text-ink-muted">{r.num ?? '—'}</td>
-                  <td className="p-sm font-body text-base text-ink">{r.company ?? '(no company)'}</td>
-                  <td className="p-sm font-body text-base text-ink-soft">{r.title ?? '(no title)'}</td>
-                  <td className="p-sm font-mono text-sm text-ink font-semibold">
-                    {r.score != null ? r.score.toFixed(2) : '—'}
+                  {/* Company + Title */}
+                  <td className="p-sm">
+                    <div className="font-body text-base font-semibold text-ink leading-tight">
+                      {r.company ?? '(unknown)'}
+                    </div>
+                    <div className="font-body text-sm text-ink-soft leading-tight mt-[2px] line-clamp-1">
+                      {r.title ?? ''}
+                    </div>
                   </td>
-                  <td className="p-sm font-mono text-xs uppercase tracking-wider text-ink-muted">{r.state}</td>
+
+                  {/* Score */}
+                  <td className="p-sm">
+                    {r.score != null ? (
+                      <span className={
+                        'font-mono text-xs font-bold px-[6px] py-[3px] border-[1.5px] border-ink ' +
+                        (r.score >= 4.3 ? 'bg-acid text-ink' :
+                         r.score >= 3.8 ? 'bg-cyber text-ink' :
+                         'bg-paper text-ink-muted border-ink-muted')
+                      }>
+                        {r.score.toFixed(2)}
+                      </span>
+                    ) : <span className="text-ink-dim font-mono text-xs">—</span>}
+                  </td>
+
+                  {/* Status — evaluated only, else state tag */}
                   <td className="p-sm" onClick={(e) => e.stopPropagation()}>
-                    {id != null && onStatusChange ? (
+                    {isEvaluated && id != null && onStatusChange ? (
                       <select
                         data-testid={`status-select-${id}`}
-                        defaultValue=""
-                        value={optimisticStatuses?.get(id) ?? ''}
+                        value={appStatus ?? ''}
                         onChange={(e) => {
                           if (e.target.value && id) {
                             onStatusChange({ id, status: e.target.value as ApplicationStatus });
                           }
                         }}
-                        className="bg-paper border-[1.5px] border-ink-muted font-mono text-xs uppercase rounded-none px-xs py-[2px] focus:outline-none focus:border-cyber"
+                        className="bg-paper border-[1.5px] border-ink-muted font-mono text-xs uppercase rounded-none px-xs py-[2px] focus:outline-none focus:border-cyber max-w-[130px]"
                       >
                         <option value="" disabled>— set —</option>
                         {APPLICATION_STATUSES.map((s) => (
@@ -228,16 +242,64 @@ export function PipelineTable(props: PipelineTableProps) {
                         ))}
                       </select>
                     ) : (
-                      <span className="font-mono text-xs text-ink-dim">—</span>
+                      <span className={
+                        'font-mono text-[10px] uppercase tracking-widest px-[5px] py-[2px] border ' +
+                        (r.state === 'skipped' ? 'border-ink-muted text-ink-muted' :
+                         r.state === 'error'   ? 'border-magenta text-magenta' :
+                         'border-ink-dim text-ink-dim')
+                      }>
+                        {r.state}
+                      </span>
                     )}
                   </td>
-                  <td className="p-sm font-mono text-xs text-ink-muted">{host}</td>
+
+                  {/* Notes (evaluated) or Reason (skipped/error) */}
+                  <td className="p-sm max-w-[320px]">
+                    {isEvaluated && r.appNotes ? (
+                      <span className="font-body text-sm text-ink-soft line-clamp-2" title={r.appNotes}>
+                        {r.appNotes}
+                      </span>
+                    ) : isSkippedOrError && r.note ? (
+                      <span className="font-mono text-xs text-ink-muted line-clamp-2" title={r.note}>
+                        {r.note}
+                      </span>
+                    ) : (
+                      <span className="text-ink-dim">—</span>
+                    )}
+                  </td>
+
+                  {/* Found + Eval date */}
+                  <td className="p-sm">
+                    {r.firstSeen ? (
+                      <div className="font-mono text-xs text-ink leading-tight">
+                        {formatDate(r.firstSeen)}
+                      </div>
+                    ) : null}
+                    {r.evalDate && r.evalDate !== r.firstSeen ? (
+                      <div className="font-mono text-[10px] text-ink-muted leading-tight mt-[2px]">
+                        eval {formatDate(r.evalDate)}
+                      </div>
+                    ) : null}
+                    {!r.firstSeen && !r.evalDate && <span className="text-ink-dim font-mono text-xs">—</span>}
+                  </td>
+
+                  {/* [↗] external JD */}
+                  <td className="p-sm" onClick={(e) => e.stopPropagation()}>
+                    <a
+                      href={r.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs uppercase tracking-wider bg-ink text-bg px-sm py-xs border-[1.5px] border-ink hover:bg-cyber hover:text-ink whitespace-nowrap"
+                    >
+                      [↗]
+                    </a>
+                  </td>
                 </tr>
               );
-            })
-          )}
-        </tbody>
-      </table>
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

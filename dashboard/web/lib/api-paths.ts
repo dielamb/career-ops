@@ -27,3 +27,8 @@ export function reportsDir(): string {
 export function outputDir(): string {
   return path.join(repoRoot(), 'output');
 }
+
+/** Path to data/scan-history.tsv from repo root. */
+export function scanHistoryPath(): string {
+  return path.join(repoRoot(), 'data', 'scan-history.tsv');
+}

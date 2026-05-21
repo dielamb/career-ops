@@ -36,10 +36,12 @@ function formatSize(bytes: number): string {
 export interface ActiveScansComponentProps extends ActiveScansProps {
   /** When true, show empty-state copy instead of returning null. */
   showWhenEmpty?: boolean;
+  /** Rendered above the scan list — scan.mjs run progress. */
+  scanProgress?: React.ReactNode;
 }
 
-export function ActiveScans({ scans, onOpenLog, onDismiss, showWhenEmpty = false }: ActiveScansComponentProps) {
-  if (scans.length === 0 && !showWhenEmpty) return null;
+export function ActiveScans({ scans, onOpenLog, onDismiss, showWhenEmpty = false, scanProgress }: ActiveScansComponentProps) {
+  if (scans.length === 0 && !showWhenEmpty && !scanProgress) return null;
 
   const runningCount = scans.filter((s) => s.status === 'running' || s.status === 'pending').length;
 
@@ -62,6 +64,9 @@ export function ActiveScans({ scans, onOpenLog, onDismiss, showWhenEmpty = false
           claude cold-start ~70s · full scan 2-3min
         </p>
       </header>
+
+      {scanProgress}
+
       {scans.length === 0 ? (
         <p data-testid="active-scans-empty" className="font-mono text-xs text-ink-muted">
           No active scans. Add URL in sidebar to start one.

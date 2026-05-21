@@ -2,109 +2,88 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, LayoutGroup } from 'framer-motion';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { PipelineTable as RawPipelineTable, type PipelineRowAction, type StatusChangeAction, type ApplicationStatus } from './raw/PipelineTable';
+import {
+  PipelineTable as RawPipelineTable,
+  type PipelineRowAction,
+  type StatusChangeAction,
+  type ApplicationStatus,
+  type SortCol,
+  type SortDir,
+} from './raw/PipelineTable';
 import { ListingModal } from './ListingModal';
-import type { PipelineEntry } from '@/lib/schemas';
+import type { EnrichedPipelineEntry } from '@/lib/schemas';
 import { fadeUp } from '@/lib/motion-presets';
 
 export interface PipelineTableClientProps {
-  rows: PipelineEntry[];
-  /** Map of pipeline num → application status (from applications.md), so /pipeline view shows current status after mark-sent. */
+  rows: EnrichedPipelineEntry[];
   appStatusByNum?: Record<number, ApplicationStatus>;
 }
 
-function hostnameOf(url: string): string {
-  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return 'unknown'; }
+const FILTERS_KEY = 'careerops-pipeline-v3';
+
+function readStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(FILTERS_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return (parsed[key] as T) ?? fallback;
+  } catch { return fallback; }
 }
 
 export function PipelineTable({ rows, appStatusByNum = {} }: PipelineTableClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const FILTERS_KEY = 'careerops-pipeline-filters';
 
-  // Merge server-side app statuses with optimistic in-flight updates.
-  // optimistic wins (more recent), then appStatusByNum (server state).
-  const mergedStatuses = useMemo(() => {
-    const merged = new Map<string, ApplicationStatus>();
-    for (const [num, status] of Object.entries(appStatusByNum)) {
-      merged.set(num, status);
-    }
-    return merged;
-  }, [appStatusByNum]);
-
-  // Initialise from localStorage if available
-  const [activeStates, setActiveStates] = useState<ReadonlySet<PipelineEntry['state']>>(() => {
-    if (typeof window === 'undefined') return new Set();
-    try {
-      const saved = JSON.parse(localStorage.getItem(FILTERS_KEY) ?? '{}');
-      return new Set<PipelineEntry['state']>(saved.activeStates ?? []);
-    } catch { return new Set(); }
-  });
-  const [activeSources, setActiveSources] = useState<ReadonlySet<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
-    try {
-      const saved = JSON.parse(localStorage.getItem(FILTERS_KEY) ?? '{}');
-      return new Set<string>(saved.activeSources ?? []);
-    } catch { return new Set(); }
-  });
-  const [minScore, setMinScore] = useState<number>(() => {
-    if (typeof window === 'undefined') return 0;
-    try {
-      const saved = JSON.parse(localStorage.getItem(FILTERS_KEY) ?? '{}');
-      return typeof saved.minScore === 'number' ? saved.minScore : 0;
-    } catch { return 0; }
-  });
-  const [search, setSearch] = useState<string>(() => {
-    if (typeof window === 'undefined') return '';
-    try {
-      const saved = JSON.parse(localStorage.getItem(FILTERS_KEY) ?? '{}');
-      return typeof saved.search === 'string' ? saved.search : '';
-    } catch { return ''; }
-  });
-  const [selectedId, setSelectedId]       = useState<string | null>(null);
+  const [sortCol, setSortCol] = useState<SortCol>(() => readStorage<SortCol>('sortCol', 'score'));
+  const [sortDir, setSortDir] = useState<SortDir>(() => readStorage<SortDir>('sortDir', 'desc'));
+  const [search, setSearch] = useState<string>(() => readStorage('search', ''));
+  const [minScore, setMinScore] = useState<number>(() => readStorage('minScore', 0));
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [optimisticStatuses, setOptimisticStatuses] = useState<Map<string, ApplicationStatus>>(new Map());
 
-  // Persist filters to localStorage on every change.
+  const mergedStatuses = useMemo(() => {
+    const m = new Map<string, ApplicationStatus>();
+    for (const [num, status] of Object.entries(appStatusByNum)) m.set(num, status);
+    return m;
+  }, [appStatusByNum]);
+
   useEffect(() => {
     try {
-      localStorage.setItem(FILTERS_KEY, JSON.stringify({
-        activeStates: Array.from(activeStates),
-        activeSources: Array.from(activeSources),
-        minScore,
-        search,
-      }));
-    } catch { /* quota exceeded or private mode — ignore */ }
-  }, [activeStates, activeSources, minScore, search]);
+      localStorage.setItem(FILTERS_KEY, JSON.stringify({ sortCol, sortDir, search, minScore }));
+    } catch { /* quota / private */ }
+  }, [sortCol, sortDir, search, minScore]);
 
-  // Auto-open modal on mount if ?id=N query present (used by /today Top 5 [Open] navigation).
   useEffect(() => {
-    const idParam = searchParams.get('id');
-    if (idParam) setSelectedId(idParam);
+    const id = searchParams.get('id');
+    if (id) setSelectedId(id);
   }, [searchParams]);
+
+  const handleSortChange = (col: SortCol) => {
+    if (col === sortCol) {
+      setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(col);
+      setSortDir(col === 'score' || col === 'num' ? 'desc' : 'asc');
+    }
+  };
 
   const closeModal = () => {
     setSelectedId(null);
-    // Drop ?id= from URL on close so refresh doesn't re-open.
     if (searchParams.get('id')) router.replace('/pipeline');
   };
 
-  const allSources = useMemo(() => {
-    const set = new Set<string>();
-    for (const r of rows) set.add(hostnameOf(r.url));
-    return Array.from(set).sort();
-  }, [rows]);
-
-  const toggleState = (s: PipelineEntry['state']) =>
-    setActiveStates((cur) => { const n = new Set(cur); n.has(s) ? n.delete(s) : n.add(s); return n; });
-  const toggleSource = (h: string) =>
-    setActiveSources((cur) => { const n = new Set(cur); n.has(h) ? n.delete(h) : n.add(h); return n; });
-
   const handleRowClick = (a: PipelineRowAction) => {
-    if (a.id != null) setSelectedId(a.id);
+    if (a.entry.state === 'evaluated' && a.id != null) {
+      // Evaluated + has report → open in-dashboard modal
+      setSelectedId(a.id);
+    } else {
+      // No report → open external JD in new tab
+      window.open(a.entry.url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const handleStatusChange = async (action: StatusChangeAction) => {
-    // Optimistic update
     setOptimisticStatuses((prev) => new Map(prev).set(action.id, action.status));
     try {
       const res = await fetch('/api/actions/mark-sent', {
@@ -113,27 +92,15 @@ export function PipelineTable({ rows, appStatusByNum = {} }: PipelineTableClient
         body: JSON.stringify({ id: action.id, status: action.status }),
       });
       if (res.ok) {
-        // Refresh server data so appStatusByNum picks up the change for other rows
         router.refresh();
       } else {
-        // Revert on non-2xx
-        setOptimisticStatuses((prev) => {
-          const next = new Map(prev);
-          next.delete(action.id);
-          return next;
-        });
+        setOptimisticStatuses((prev) => { const n = new Map(prev); n.delete(action.id); return n; });
       }
     } catch {
-      // On failure revert optimistic update
-      setOptimisticStatuses((prev) => {
-        const next = new Map(prev);
-        next.delete(action.id);
-        return next;
-      });
+      setOptimisticStatuses((prev) => { const n = new Map(prev); n.delete(action.id); return n; });
     }
   };
 
-  // Effective statuses passed to raw table: optimistic wins, then server appStatus
   const effectiveStatuses = useMemo(() => {
     const out = new Map<string, ApplicationStatus>();
     for (const [k, v] of mergedStatuses) out.set(k, v);
@@ -152,26 +119,22 @@ export function PipelineTable({ rows, appStatusByNum = {} }: PipelineTableClient
       >
         <RawPipelineTable
           rows={rows}
-          activeStates={activeStates}
-          activeSources={activeSources}
-          minScore={minScore}
+          sortCol={sortCol}
+          sortDir={sortDir}
           search={search}
-          allSources={allSources}
-          onToggleState={toggleState}
-          onToggleSource={toggleSource}
-          onMinScoreChange={setMinScore}
+          minScore={minScore}
+          onSortChange={handleSortChange}
           onSearchChange={setSearch}
+          onMinScoreChange={setMinScore}
           onRowClick={handleRowClick}
           selectedId={selectedId}
           onStatusChange={handleStatusChange}
           optimisticStatuses={effectiveStatuses}
         />
       </motion.div>
+
       {selectedId != null && (
-        <ListingModal
-          id={selectedId}
-          onClose={closeModal}
-        />
+        <ListingModal id={selectedId} onClose={closeModal} />
       )}
     </LayoutGroup>
   );

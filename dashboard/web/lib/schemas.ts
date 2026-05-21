@@ -31,6 +31,13 @@ export const PipelineEntrySchema = z.object({
 });
 export type PipelineEntry = z.infer<typeof PipelineEntrySchema>;
 
+/** PipelineEntry enriched with cross-source data (joined at page level). */
+export interface EnrichedPipelineEntry extends PipelineEntry {
+  evalDate: string | null;   // applications.md date
+  appNotes: string | null;   // applications.md notes (1-line decision rationale)
+  firstSeen: string | null;  // scan-history.tsv first_seen
+}
+
 // ── Report (reports/NNN-slug-YYYY-MM-DD.md) ─────────────────────
 // File-name yields num + slug + date. Body has "**Key:** value" header
 // then "## Blocks" table (A-F rows) then narrative sections.

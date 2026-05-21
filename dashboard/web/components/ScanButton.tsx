@@ -36,13 +36,14 @@ export function ScanButton() {
       const data = await res.json() as { logPath: string };
       logPath = data.logPath;
       showToast('Scan started (~1-2 min)', 'info');
+      window.dispatchEvent(new CustomEvent('careerops:scan-started', { detail: { logPath } }));
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Network error', 'error');
       setRunning(false);
       return;
     }
 
-    // Poll every 5s
+    // Poll every 2s for responsive progress display
     pollRef.current = setInterval(async () => {
       try {
         const res = await fetch(`/api/actions/scan/status?logPath=${encodeURIComponent(logPath)}`);
@@ -51,6 +52,7 @@ export function ScanButton() {
         if (data.done) {
           stopPolling();
           setRunning(false);
+          window.dispatchEvent(new CustomEvent('careerops:scan-done', { detail: { logPath } }));
           const count = data.newOffers;
           showToast(
             count != null ? `Scan complete: ${count} new offer${count !== 1 ? 's' : ''}` : 'Scan complete',
@@ -58,7 +60,7 @@ export function ScanButton() {
           );
         }
       } catch { /* network blip — keep polling */ }
-    }, 5000);
+    }, 2000);
   }, [running, showToast, stopPolling]);
 
   return (
