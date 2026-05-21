@@ -17,10 +17,18 @@ export interface ListingModalProps {
   applyMessage: string | null;
   markState: ModalActionState;
   markMessage: string | null;
+  /** Contacto action */
+  contactoState: ModalActionState;
+  contactoContent: string | null;
+  /** Cover letter action */
+  coverState: ModalActionState;
+  coverContent: string | null;
   /** Handlers. */
   onOpenInChrome: () => void;
   onMarkApplied: () => void;
   onMarkDiscarded: () => void;
+  onFindContacts: () => void;
+  onGenerateCover: () => void;
   onClose: () => void;
 }
 
@@ -28,7 +36,10 @@ export function ListingModal(props: ListingModalProps) {
   const {
     report, pdfHref, loading, loadError,
     applyState, applyMessage, markState, markMessage,
-    onOpenInChrome, onMarkApplied, onMarkDiscarded, onClose,
+    contactoState, contactoContent,
+    coverState, coverContent,
+    onOpenInChrome, onMarkApplied, onMarkDiscarded,
+    onFindContacts, onGenerateCover, onClose,
   } = props;
 
   return (
@@ -39,7 +50,6 @@ export function ListingModal(props: ListingModalProps) {
       aria-label={report ? `Listing ${report.num} ${report.title}` : 'Listing'}
       className="fixed inset-0 z-50 flex items-center justify-center p-md bg-ink/40"
       onClick={(e) => {
-        // Outside click closes (only when target is the backdrop, not the content).
         if (e.target === e.currentTarget) onClose();
       }}
     >
@@ -71,7 +81,7 @@ export function ListingModal(props: ListingModalProps) {
         </header>
 
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-md p-md overflow-auto">
-          <section data-testid="modal-md-pane" className="bg-paper border-[1.5px] border-ink-muted p-md overflow-auto">
+          <section data-testid="modal-md-pane" className="bg-paper border-[1.5px] border-ink-muted p-md overflow-auto flex flex-col gap-md">
             {loading && (
               <p className="font-body text-base text-ink-muted">Loading listing…</p>
             )}
@@ -109,6 +119,37 @@ export function ListingModal(props: ListingModalProps) {
                   <MarkdownProse content={report.body} />
                 </div>
               </>
+            )}
+
+            {/* Contacto result */}
+            {contactoContent && (
+              <div data-testid="modal-contacto-result" className="border-t-[2px] border-cyber pt-md">
+                <p className="font-mono text-xs uppercase tracking-wider text-cyber mb-sm">// Contacts</p>
+                <MarkdownProse content={contactoContent} />
+              </div>
+            )}
+            {contactoState === 'pending' && (
+              <p className="font-mono text-xs text-ink-muted">// searching contacts…</p>
+            )}
+
+            {/* Cover letter result */}
+            {coverContent && (
+              <div data-testid="modal-cover-result" className="border-t-[2px] border-acid pt-md">
+                <div className="flex items-center justify-between mb-sm">
+                  <p className="font-mono text-xs uppercase tracking-wider text-acid">// Cover Letter</p>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(coverContent)}
+                    className="font-mono text-xs uppercase tracking-wider px-sm py-xs bg-acid text-ink border-[1.5px] border-ink shadow-[2px_2px_0_var(--color-ink)] rounded-none"
+                  >
+                    [Copy]
+                  </button>
+                </div>
+                <MarkdownProse content={coverContent} />
+              </div>
+            )}
+            {coverState === 'pending' && (
+              <p className="font-mono text-xs text-ink-muted">// generating cover letter…</p>
             )}
           </section>
 
@@ -162,6 +203,24 @@ export function ListingModal(props: ListingModalProps) {
             className="bg-paper text-ink border-[2.5px] border-ink font-mono text-sm uppercase tracking-wider px-md py-sm rounded-none disabled:opacity-50"
           >
             [Mark Discarded]
+          </button>
+          <button
+            type="button"
+            data-testid="modal-action-find-contacts"
+            onClick={onFindContacts}
+            disabled={!report || contactoState === 'pending'}
+            className="bg-magenta text-ink border-[2.5px] border-ink shadow-[3px_3px_0_var(--color-ink)] font-mono text-sm uppercase tracking-wider px-md py-sm rounded-none disabled:opacity-50"
+          >
+            [Find Contacts]
+          </button>
+          <button
+            type="button"
+            data-testid="modal-action-cover"
+            onClick={onGenerateCover}
+            disabled={!report || coverState === 'pending'}
+            className="bg-paper text-ink border-[2.5px] border-ink shadow-[3px_3px_0_var(--color-ink)] font-mono text-sm uppercase tracking-wider px-md py-sm rounded-none disabled:opacity-50"
+          >
+            [Cover Letter]
           </button>
 
           {(applyState !== 'idle' || markState !== 'idle') && (
