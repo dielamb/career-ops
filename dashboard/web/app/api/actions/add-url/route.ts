@@ -37,6 +37,14 @@ export async function POST(req: Request) {
     throw err;
   }
 
+  // Reject job-board aggregator root URLs — oferta.md mode evaluates a SINGLE
+  // posting, not a listing page. Single-offer URLs on these domains have a
+  // deeper path (e.g. /jobs/{id}), so allow those through.
+  const aggregatorMessage = detectJobAggregatorRoot(url);
+  if (aggregatorMessage) {
+    return jsonError(400, aggregatorMessage);
+  }
+
   const root = repoRoot();
   const ofertaPath = path.join(root, 'modes', 'oferta.md');
   const profilePath = path.join(root, 'modes', '_profile.md');
@@ -62,4 +70,49 @@ export async function POST(req: Request) {
   child.unref();
 
   return jsonOk({ ok: true, logPath, startedAt: new Date(ts).toISOString() }, { status: 202 });
+}
+
+/**
+ * Known job-aggregator domains. Listing/root URLs on these sites cannot be
+ * evaluated by oferta.md (which expects a single posting). Returns a
+ * user-friendly error message if the URL is a listing root, or null if it
+ * looks like a single-posting path (≥2 path segments under /jobs|/listing|/job).
+ */
+function detectJobAggregatorRoot(rawUrl: string): string | null {
+  let parsed: URL;
+  try { parsed = new URL(rawUrl); } catch { return null; }
+
+  const host = parsed.hostname.replace(/^www\./, '').toLowerCase();
+  const path = parsed.pathname.replace(/\/+$/, '');
+  const segments = path.split('/').filter(Boolean);
+
+  // Aggregator boards: must drill into a specific posting.
+  const aggregators: Record<string, { name: string; postingPrefix?: string }> = {
+    'designsystems.jobs':   { name: 'designsystems.jobs',   postingPrefix: 'jobs' },
+    'remoteok.com':         { name: 'Remote OK',            postingPrefix: 'remote-jobs' },
+    'weworkremotely.com':   { name: 'We Work Remotely',     postingPrefix: 'remote-jobs' },
+    'workingnomads.com':    { name: 'Working Nomads',       postingPrefix: 'jobs' },
+    'remote.co':            { name: 'Remote.co',            postingPrefix: 'job' },
+    'wellfound.com':        { name: 'Wellfound (AngelList)', postingPrefix: 'jobs' },
+    'angel.co':             { name: 'AngelList',            postingPrefix: 'jobs' },
+    'glassdoor.com':        { name: 'Glassdoor',            postingPrefix: 'job-listing' },
+    'indeed.com':           { name: 'Indeed',               postingPrefix: 'viewjob' },
+    'linkedin.com':         { name: 'LinkedIn Jobs',        postingPrefix: 'jobs/view' },
+    'jobgether.com':        { name: 'Jobgether',            postingPrefix: 'offer' },
+  };
+
+  const config = aggregators[host];
+  if (!config) return null;
+
+  // Single posting heuristic: path includes the posting prefix segment AND has
+  // at least one segment after it (the job id/slug).
+  if (config.postingPrefix) {
+    const prefixSegs = config.postingPrefix.split('/');
+    const idx = segments.findIndex((s, i) =>
+      prefixSegs.every((p, j) => segments[i + j] === p),
+    );
+    if (idx !== -1 && segments.length > idx + prefixSegs.length) return null;
+  }
+
+  return `${config.name} is a job aggregator — paste the URL of a specific posting (not the listing page). Tip: open ${parsed.origin}/ in your browser, click a job, then copy that URL.`;
 }
