@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ListingModal as RawListingModal, type ModalActionState } from './raw/ListingModal';
+import { ListingModal as RawListingModal, type ModalActionState, type TabId } from './raw/ListingModal';
 import type { Report } from '@/lib/schemas';
 import { fadeUp } from '@/lib/motion-presets';
 
@@ -74,6 +74,8 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
   const [jdContent, setJdContent] = useState<string | null>(null);
   const [jdError, setJdError]     = useState<string | null>(null);
   const [jdLoading, setJdLoading] = useState<boolean>(false);
+
+  const [activeTab, setActiveTab] = useState<TabId>('summary');
 
   const { state: contactoState, content: contactoFreshContent, elapsedSec: contactoElapsed } =
     usePollAction(contactoLogPath, '/api/actions/contacto/status');
@@ -225,6 +227,7 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
       if (res.ok) {
         const data = await res.json() as { logPath: string };
         setContactoLogPath(data.logPath);
+        setActiveTab('contacts');
       }
     } catch { /* ignore */ }
   }, [listing]);
@@ -240,6 +243,7 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
       if (res.ok) {
         const data = await res.json() as { logPath: string };
         setCoverLogPath(data.logPath);
+        setActiveTab('cover');
       }
     } catch { /* ignore */ }
   }, [listing]);
@@ -274,6 +278,8 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
         jdContent={jdContent}
         jdError={jdError}
         jdLoading={jdLoading}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
         onOpenInChrome={handleOpenInChrome}
         onMarkApplied={() => postMarkSent('Applied')}
         onMarkDiscarded={() => postMarkSent('Discarded')}

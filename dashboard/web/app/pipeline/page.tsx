@@ -23,9 +23,10 @@ export default async function PipelinePage() {
   const parseErrors: ParseError[] = pipelineResult.errors;
 
   // Build map: pipeline num → application status (so /pipeline view reflects mark-sent updates).
-  const appStatusByNum = new Map<number, Application['status']>();
+  // Exclude 'SKIP' — it is not a settable ApplicationStatus in the dropdown.
+  const appStatusByNum = new Map<number, Exclude<Application['status'], 'SKIP'>>();
   for (const app of applicationsResult.data) {
-    appStatusByNum.set(app.num, app.status);
+    if (app.status !== 'SKIP') appStatusByNum.set(app.num, app.status);
   }
 
   return (
