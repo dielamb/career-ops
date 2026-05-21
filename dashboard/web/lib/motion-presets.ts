@@ -26,9 +26,9 @@ export const scoreCountUp = (from: number, to: number) => ({
 /** CRT boot opacity ramp: 0 → 0.5 → 1 over 150ms (3 frames @ 50ms). Used by `/today` hero. */
 export const pixelBootUp = {
   initial: { opacity: 0 },
-  animate: { opacity: [0, 0.5, 1] },
-  transition: { duration: 0.15, times: [0, 0.5, 1] },
-} as const;
+  animate: { opacity: [0, 0.5, 1] as number[] },
+  transition: { duration: 0.15, times: [0, 0.5, 1] as number[] },
+};
 
 /** Spring config for `layout` prop reorder animations (filter chips on /pipeline). */
 export const layoutSpring = {

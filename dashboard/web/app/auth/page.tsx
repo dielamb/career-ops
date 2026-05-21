@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { fadeUp, pixelBootUp } from '@/lib/motion-presets';
 import { useToast } from '@/components/Toast';
 
@@ -10,6 +10,9 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const { showToast } = useToast();
+  const shouldReduceMotion = useReducedMotion();
+  const motion1 = shouldReduceMotion ? {} : pixelBootUp;
+  const motionFade = shouldReduceMotion ? {} : fadeUp;
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -139,7 +142,7 @@ export default function AuthPage() {
           aria-label="sign in"
         >
           <motion.div
-            {...pixelBootUp}
+            {...motion1}
             className="w-full max-w-[340px] bg-paper border-[2.5px] border-ink shadow-[6px_6px_0_var(--color-ink)] rounded-none p-[28px]"
           >
             {/* Header bar — ink-inverted, bleeds to card edges */}
@@ -151,7 +154,7 @@ export default function AuthPage() {
 
               {/* Email field */}
               <motion.div
-                {...fadeUp}
+                {...motionFade}
                 transition={{ ...fadeUp.transition, delay: 0.05 }}
                 className="mb-[18px]"
               >
@@ -170,13 +173,13 @@ export default function AuthPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full px-[12px] py-[10px] bg-bg border-[2px] border-ink rounded-none font-mono text-[13px] text-ink placeholder:text-ink-dim outline-none focus:outline-none focus:ring-0 focus:border-cyber"
+                  className="block w-full px-[12px] py-[10px] bg-bg border-[2px] border-ink rounded-none font-mono text-[13px] text-ink placeholder:text-ink-dim outline-none focus:border-cyber focus-visible:ring-2 focus-visible:ring-cyber focus-visible:ring-offset-1 focus-visible:outline-none"
                 />
               </motion.div>
 
               {/* Password field */}
               <motion.div
-                {...fadeUp}
+                {...motionFade}
                 transition={{ ...fadeUp.transition, delay: 0.1 }}
                 className="mb-[18px]"
               >
@@ -195,17 +198,17 @@ export default function AuthPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full px-[12px] py-[10px] bg-bg border-[2px] border-ink rounded-none font-mono text-[13px] text-ink placeholder:text-ink-dim outline-none focus:outline-none focus:ring-0 focus:border-cyber"
+                  className="block w-full px-[12px] py-[10px] bg-bg border-[2px] border-ink rounded-none font-mono text-[13px] text-ink placeholder:text-ink-dim outline-none focus:border-cyber focus-visible:ring-2 focus-visible:ring-cyber focus-visible:ring-offset-1 focus-visible:outline-none"
                 />
               </motion.div>
 
               {/* Submit button */}
               <motion.button
-                {...fadeUp}
+                {...motionFade}
                 transition={{ ...fadeUp.transition, delay: 0.15 }}
                 type="submit"
                 disabled={pending}
-                className="block w-full mt-[8px] px-[20px] py-[12px] bg-ink text-bg border-[2px] border-ink rounded-none font-mono text-sm font-semibold tracking-[0.04em] uppercase cursor-pointer text-center shadow-[3px_3px_0_var(--color-cyber)] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[3px_3px_0_var(--color-cyber)] focus:outline-none focus:ring-0"
+                className="block w-full mt-[8px] px-[20px] py-[12px] bg-ink text-bg border-[2px] border-ink rounded-none font-mono text-sm font-semibold tracking-[0.04em] uppercase cursor-pointer text-center shadow-[3px_3px_0_var(--color-cyber)] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[3px_3px_0_var(--color-cyber)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyber focus-visible:ring-offset-2"
               >
                 {pending ? '[Signing in…]' : 'CONTINUE →'}
               </motion.button>
@@ -219,11 +222,11 @@ export default function AuthPage() {
 
               {/* Google OAuth button */}
               <motion.button
-                {...fadeUp}
+                {...motionFade}
                 transition={{ ...fadeUp.transition, delay: 0.2 }}
                 type="button"
                 onClick={handleGoogleOAuth}
-                className="flex items-center justify-center gap-[8px] w-full px-[20px] py-[10px] bg-paper border-[2px] border-ink rounded-none font-body text-[13px] font-medium text-ink cursor-pointer hover:bg-chrome hover:shadow-[3px_3px_0_var(--color-ink)] focus:outline-none focus:ring-0"
+                className="flex items-center justify-center gap-[8px] w-full px-[20px] py-[10px] bg-paper border-[2px] border-ink rounded-none font-body text-[13px] font-medium text-ink cursor-pointer hover:bg-chrome hover:shadow-[3px_3px_0_var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyber focus-visible:ring-offset-2"
               >
                 {/* Inline Google G SVG — no external icon dependency */}
                 <svg
@@ -248,7 +251,7 @@ export default function AuthPage() {
               No account?{' '}
               <a
                 href="/signup"
-                className="text-ink font-bold border-b-[2px] border-ink no-underline hover:bg-cyber hover:border-cyber focus:outline-none focus:ring-0"
+                className="text-ink font-bold border-b-[2px] border-ink no-underline hover:bg-cyber hover:border-cyber focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyber focus-visible:ring-offset-1"
               >
                 {'// SIGN UP'}
               </a>
