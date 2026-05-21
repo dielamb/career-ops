@@ -1,4 +1,5 @@
 import type { Report } from '@/lib/schemas';
+import { MarkdownProse } from '@/components/MarkdownProse';
 
 export type ModalActionState = 'idle' | 'pending' | 'success' | 'locked' | 'error';
 
@@ -104,9 +105,9 @@ export function ListingModal(props: ListingModalProps) {
                   })}
                 </ul>
                 <h3 className="font-display font-bold text-xl text-ink mt-lg mb-sm">Body</h3>
-                <pre data-testid="modal-body" className="font-mono text-xs text-ink-soft whitespace-pre-wrap">
-                  {report.body}
-                </pre>
+                <div data-testid="modal-body">
+                  <MarkdownProse content={report.body} />
+                </div>
               </>
             )}
           </section>
@@ -119,9 +120,16 @@ export function ListingModal(props: ListingModalProps) {
                 title="Listing PDF"
                 className="w-full h-full min-h-[480px] border-0"
               />
+            ) : report ? (
+              <div data-testid="modal-pdf-missing" className="p-md overflow-y-auto max-h-[80vh]">
+                <p className="font-mono text-xs uppercase tracking-wider text-ink-muted mb-md">
+                  // PDF unavailable — full report below
+                </p>
+                <MarkdownProse content={report.body} />
+              </div>
             ) : (
               <div data-testid="modal-pdf-missing" className="p-md font-mono text-sm text-ink-muted">
-                PDF unavailable for this listing.
+                Loading…
               </div>
             )}
           </section>

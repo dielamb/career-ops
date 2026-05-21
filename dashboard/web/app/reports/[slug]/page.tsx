@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { notFound } from 'next/navigation';
 import { repoRoot } from '@/lib/api-paths';
+import { MarkdownProse } from '@/components/MarkdownProse';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -38,9 +39,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
       </header>
 
       <article className="bg-paper border-[2.5px] border-ink shadow-[6px_6px_0_var(--color-ink)] rounded-none p-xl max-w-4xl">
-        <pre className="font-mono text-sm text-ink whitespace-pre-wrap break-words leading-relaxed">
-          {content}
-        </pre>
+        <MarkdownProse content={content} />
       </article>
     </div>
   );
