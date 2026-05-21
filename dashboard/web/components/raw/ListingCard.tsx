@@ -12,10 +12,25 @@ export interface ListingCardProps {
 }
 
 export function ListingCard({ company, role, score, status, source, onOpen }: ListingCardProps) {
+  const clickable = typeof onOpen === 'function';
+  const Tag = clickable ? 'button' : 'article';
+  const interactiveProps = clickable
+    ? {
+        type: 'button' as const,
+        onClick: onOpen,
+        'aria-label': `Open listing ${company} ${role}`,
+      }
+    : {};
+  const interactiveClasses = clickable
+    ? 'cursor-pointer text-left transition-transform hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0_var(--color-ink)] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-cyber active:translate-x-[2px] active:translate-y-[2px] active:shadow-[3px_3px_0_var(--color-ink)]'
+    : '';
+
   return (
-    <article
+    <Tag
       data-testid="listing-card"
-      className="relative bg-paper border-[2.5px] border-ink shadow-[6px_6px_0_var(--color-ink)] rounded-none p-md"
+      data-clickable={clickable ? 'true' : 'false'}
+      className={`relative block w-full bg-paper border-[2.5px] border-ink shadow-[6px_6px_0_var(--color-ink)] rounded-none p-md ${interactiveClasses}`}
+      {...interactiveProps}
     >
       <div className="absolute top-2 right-2 bg-acid text-ink font-display font-bold text-xl px-2 py-1 border-[1.5px] border-ink rounded-none">
         {score.toFixed(2)}
@@ -37,14 +52,6 @@ export function ListingCard({ company, role, score, status, source, onOpen }: Li
           </span>
         )}
       </div>
-      <button
-        type="button"
-        data-testid="listing-open"
-        onClick={onOpen}
-        className="mt-md bg-ink text-bg font-mono text-sm uppercase tracking-wider px-md py-sm rounded-none border-[1.5px] border-ink hover:bg-cyber hover:text-ink"
-      >
-        [Open]
-      </button>
-    </article>
+    </Tag>
   );
 }

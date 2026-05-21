@@ -76,6 +76,7 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
   const [jdLoading, setJdLoading] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<TabId>('summary');
+  const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
 
   const { state: contactoState, content: contactoFreshContent, elapsedSec: contactoElapsed } =
     usePollAction(contactoLogPath, '/api/actions/contacto/status');
@@ -113,6 +114,22 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
+
+  // Fetch current application status (from applications.md) for the header pill.
+  useEffect(() => {
+    if (!listing) return;
+    let cancelled = false;
+    setApplicationStatus(null);
+    fetch('/api/applications')
+      .then(async (res) => {
+        if (cancelled || !res.ok) return;
+        const body = await res.json() as { data: Array<{ num: number; status: string }> };
+        const app = body.data.find((a) => a.num === listing.report.num);
+        if (app) setApplicationStatus(app.status);
+      })
+      .catch(() => { /* ignore */ });
+    return () => { cancelled = true; };
+  }, [listing, markState]);
 
   // Lookup cached contacts + cover after listing loaded (persistence across modal close/reopen).
   useEffect(() => {
@@ -280,6 +297,7 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
         jdLoading={jdLoading}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        applicationStatus={applicationStatus}
         onOpenInChrome={handleOpenInChrome}
         onMarkApplied={() => postMarkSent('Applied')}
         onMarkDiscarded={() => postMarkSent('Discarded')}

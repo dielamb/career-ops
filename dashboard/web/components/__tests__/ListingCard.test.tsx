@@ -25,10 +25,11 @@ describe('ListingCard (motion-wrapped)', () => {
     expect(badge).toHaveTextContent('Applied');
   });
 
-  it('fires onOpen when [Open] button is clicked', () => {
+  it('fires onOpen when the card itself is clicked (clickable card pattern)', () => {
     const onOpen = vi.fn();
     render(<ListingCard {...baseProps} onOpen={onOpen} />);
-    fireEvent.click(screen.getByTestId('listing-open'));
+    // After refactor: whole card is clickable (button element), not a dedicated [Open] button.
+    fireEvent.click(screen.getByTestId('listing-card'));
     expect(onOpen).toHaveBeenCalledOnce();
   });
 

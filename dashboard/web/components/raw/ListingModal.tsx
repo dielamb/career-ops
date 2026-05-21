@@ -33,6 +33,8 @@ export interface ListingModalProps {
   /** Active tab (controlled from parent) */
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
+  /** Current application status from applications.md (shown as pill in header) */
+  applicationStatus?: string | null;
   /** Handlers. */
   onOpenInChrome: () => void;
   onMarkApplied: () => void;
@@ -113,6 +115,7 @@ export function ListingModal(props: ListingModalProps) {
     coverState, coverContent, coverElapsedSec = 0,
     jdContent = null, jdError = null, jdLoading = false,
     activeTab, onTabChange,
+    applicationStatus = null,
     onOpenInChrome, onMarkApplied, onMarkDiscarded,
     onFindContacts, onGenerateCover, onClose,
   } = props;
@@ -170,7 +173,7 @@ export function ListingModal(props: ListingModalProps) {
         {recommendation && (
           <div className="border-[2px] border-ink p-md bg-paper shadow-[3px_3px_0_var(--color-ink)]">
             <p className="font-mono text-[10px] uppercase tracking-widest text-ink-muted mb-xs">// Recommendation</p>
-            <p className="font-body text-base text-ink-soft leading-relaxed">{recommendation}</p>
+            <MarkdownProse content={recommendation} />
           </div>
         )}
       </div>
@@ -404,13 +407,29 @@ export function ListingModal(props: ListingModalProps) {
         {/* Header */}
         <header className="flex items-start justify-between p-md border-b-[2.5px] border-ink flex-shrink-0">
           <div className="flex-1 min-w-0">
-            <p className="font-mono text-xs uppercase tracking-wider text-ink-muted">
-              // listing {report ? String(report.num).padStart(3, '0') : '...'}
+            <p className="font-mono text-xs uppercase tracking-wider text-ink-muted flex items-center gap-sm flex-wrap">
+              <span>// listing {report ? String(report.num).padStart(3, '0') : '...'}</span>
               {report && (
                 <>
-                  {' '}&#183; &#9733;{report.score.toFixed(2)}
-                  {' '}&#183; {report.date}
+                  <span>&#183; &#9733;{report.score.toFixed(2)}</span>
+                  <span>&#183; {report.date}</span>
                 </>
+              )}
+              {applicationStatus && (
+                <span
+                  data-testid="modal-status-pill"
+                  className={`px-2 py-0.5 border-[1.5px] border-ink font-bold tracking-widest text-[10px] ${
+                    applicationStatus === 'Applied' ? 'bg-cyber text-ink' :
+                    applicationStatus === 'Responded' ? 'bg-acid text-ink' :
+                    applicationStatus === 'Interview' ? 'bg-ink text-acid' :
+                    applicationStatus === 'Offer' ? 'bg-magenta text-paper' :
+                    applicationStatus === 'Discarded' ? 'bg-chrome text-ink-muted line-through' :
+                    applicationStatus === 'Rejected' ? 'bg-paper text-ink-dim line-through' :
+                    'bg-paper text-ink-soft'
+                  }`}
+                >
+                  {applicationStatus}
+                </span>
               )}
             </p>
             <h2

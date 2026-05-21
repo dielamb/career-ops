@@ -129,6 +129,7 @@ export function TodayHero({ applications, pipeline, parseErrors, today, onOpenTo
                     score={app.score ?? 0}
                     status={app.status}
                     source={overdue ? 'OVERDUE' : undefined}
+                    onOpen={onOpenTopFive ? () => onOpenTopFive(String(app.num)) : undefined}
                   />
                 </li>
               );

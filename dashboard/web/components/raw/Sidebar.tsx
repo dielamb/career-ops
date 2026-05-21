@@ -28,7 +28,7 @@ export function Sidebar({ items, brand = 'career-ops', footer }: SidebarProps) {
     <aside
       data-testid="sidebar"
       aria-label="Primary"
-      className="w-[240px] shrink-0 bg-bg p-lg flex flex-col gap-md border-r-[2.5px] border-ink min-h-screen"
+      className="w-[240px] shrink-0 bg-bg p-lg flex flex-col gap-md border-r-[2.5px] border-ink h-screen sticky top-0 overflow-y-auto"
     >
       <header className="mb-xl">
         <span
