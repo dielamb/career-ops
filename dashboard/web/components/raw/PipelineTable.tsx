@@ -1,9 +1,20 @@
 import type { PipelineEntry } from '@/lib/schemas';
 
+/** Application status values that can be set via inline dropdown. */
+export const APPLICATION_STATUSES = [
+  'Evaluated', 'Applied', 'Responded', 'Interview', 'Offer', 'Rejected', 'Discarded',
+] as const;
+export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
+
 export interface PipelineRowAction {
   /** id used by ListingModal — derived from row.num if available, else null. */
   id: string | null;
   entry: PipelineEntry;
+}
+
+export interface StatusChangeAction {
+  id: string;
+  status: ApplicationStatus;
 }
 
 export interface PipelineTableProps {
@@ -25,6 +36,10 @@ export interface PipelineTableProps {
   onRowClick: (action: PipelineRowAction) => void;
   /** id of the row currently considered "selected" (for highlighting). */
   selectedId: string | null;
+  /** Called when inline status dropdown changes. */
+  onStatusChange?: (action: StatusChangeAction) => void;
+  /** Map of id -> optimistic status (overrides display while saving). */
+  optimisticStatuses?: ReadonlyMap<string, ApplicationStatus>;
 }
 
 const STATE_ORDER: PipelineEntry['state'][] = ['evaluated', 'pending', 'skipped', 'error'];
@@ -45,7 +60,7 @@ export function PipelineTable(props: PipelineTableProps) {
   const {
     rows, activeStates, activeSources, minScore, search,
     allSources, onToggleState, onToggleSource, onMinScoreChange, onSearchChange,
-    onRowClick, selectedId,
+    onRowClick, selectedId, onStatusChange, optimisticStatuses,
   } = props;
 
   const term = search.trim().toLowerCase();
@@ -159,13 +174,14 @@ export function PipelineTable(props: PipelineTableProps) {
             <th className="text-left p-sm font-mono text-xs uppercase">Title</th>
             <th className="text-left p-sm font-mono text-xs uppercase">Score</th>
             <th className="text-left p-sm font-mono text-xs uppercase">State</th>
+            <th className="text-left p-sm font-mono text-xs uppercase">App Status</th>
             <th className="text-left p-sm font-mono text-xs uppercase">Source</th>
           </tr>
         </thead>
         <tbody>
           {sorted.length === 0 ? (
             <tr>
-              <td colSpan={6} data-testid="pipeline-empty" className="p-md text-center font-body text-ink-muted">
+              <td colSpan={7} data-testid="pipeline-empty" className="p-md text-center font-body text-ink-muted">
                 No candidates match the current filters.
               </td>
             </tr>
@@ -193,6 +209,28 @@ export function PipelineTable(props: PipelineTableProps) {
                     {r.score != null ? r.score.toFixed(2) : '—'}
                   </td>
                   <td className="p-sm font-mono text-xs uppercase tracking-wider text-ink-muted">{r.state}</td>
+                  <td className="p-sm" onClick={(e) => e.stopPropagation()}>
+                    {id != null && onStatusChange ? (
+                      <select
+                        data-testid={`status-select-${id}`}
+                        defaultValue=""
+                        value={optimisticStatuses?.get(id) ?? ''}
+                        onChange={(e) => {
+                          if (e.target.value && id) {
+                            onStatusChange({ id, status: e.target.value as ApplicationStatus });
+                          }
+                        }}
+                        className="bg-paper border-[1.5px] border-ink-muted font-mono text-xs uppercase rounded-none px-xs py-[2px] focus:outline-none focus:border-cyber"
+                      >
+                        <option value="" disabled>— set —</option>
+                        {APPLICATION_STATUSES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="font-mono text-xs text-ink-dim">—</span>
+                    )}
+                  </td>
                   <td className="p-sm font-mono text-xs text-ink-muted">{host}</td>
                 </tr>
               );
