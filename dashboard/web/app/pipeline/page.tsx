@@ -1,7 +1,8 @@
 import { parsePipeline } from '@/lib/parse-pipeline';
-import { pipelinePath } from '@/lib/api-paths';
+import { parseApplications } from '@/lib/parse-applications';
+import { pipelinePath, applicationsPath } from '@/lib/api-paths';
 import { PipelineTable } from '@/components/PipelineTable';
-import type { ParseError } from '@/lib/schemas';
+import type { ParseError, PipelineEntry, Application } from '@/lib/schemas';
 
 /**
  * /pipeline server page.
@@ -15,8 +16,17 @@ import type { ParseError } from '@/lib/schemas';
 export const dynamic = 'force-dynamic';
 
 export default async function PipelinePage() {
-  const result = await parsePipeline(pipelinePath());
-  const parseErrors: ParseError[] = result.errors;
+  const [pipelineResult, applicationsResult] = await Promise.all([
+    parsePipeline(pipelinePath()),
+    parseApplications(applicationsPath()),
+  ]);
+  const parseErrors: ParseError[] = pipelineResult.errors;
+
+  // Build map: pipeline num → application status (so /pipeline view reflects mark-sent updates).
+  const appStatusByNum = new Map<number, Application['status']>();
+  for (const app of applicationsResult.data) {
+    appStatusByNum.set(app.num, app.status);
+  }
 
   return (
     <div className="flex flex-col gap-lg">
@@ -34,7 +44,7 @@ export default async function PipelinePage() {
           </p>
         </div>
       )}
-      <PipelineTable rows={result.data} />
+      <PipelineTable rows={pipelineResult.data} appStatusByNum={Object.fromEntries(appStatusByNum)} />
     </div>
   );
 }

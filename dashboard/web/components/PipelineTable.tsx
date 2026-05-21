@@ -9,16 +9,28 @@ import { fadeUp } from '@/lib/motion-presets';
 
 export interface PipelineTableClientProps {
   rows: PipelineEntry[];
+  /** Map of pipeline num → application status (from applications.md), so /pipeline view shows current status after mark-sent. */
+  appStatusByNum?: Record<number, ApplicationStatus>;
 }
 
 function hostnameOf(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return 'unknown'; }
 }
 
-export function PipelineTable({ rows }: PipelineTableClientProps) {
+export function PipelineTable({ rows, appStatusByNum = {} }: PipelineTableClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const FILTERS_KEY = 'careerops-pipeline-filters';
+
+  // Merge server-side app statuses with optimistic in-flight updates.
+  // optimistic wins (more recent), then appStatusByNum (server state).
+  const mergedStatuses = useMemo(() => {
+    const merged = new Map<string, ApplicationStatus>();
+    for (const [num, status] of Object.entries(appStatusByNum)) {
+      merged.set(num, status);
+    }
+    return merged;
+  }, [appStatusByNum]);
 
   // Initialise from localStorage if available
   const [activeStates, setActiveStates] = useState<ReadonlySet<PipelineEntry['state']>>(() => {
@@ -95,11 +107,22 @@ export function PipelineTable({ rows }: PipelineTableClientProps) {
     // Optimistic update
     setOptimisticStatuses((prev) => new Map(prev).set(action.id, action.status));
     try {
-      await fetch('/api/actions/mark-sent', {
+      const res = await fetch('/api/actions/mark-sent', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ id: action.id, status: action.status }),
       });
+      if (res.ok) {
+        // Refresh server data so appStatusByNum picks up the change for other rows
+        router.refresh();
+      } else {
+        // Revert on non-2xx
+        setOptimisticStatuses((prev) => {
+          const next = new Map(prev);
+          next.delete(action.id);
+          return next;
+        });
+      }
     } catch {
       // On failure revert optimistic update
       setOptimisticStatuses((prev) => {
@@ -109,6 +132,14 @@ export function PipelineTable({ rows }: PipelineTableClientProps) {
       });
     }
   };
+
+  // Effective statuses passed to raw table: optimistic wins, then server appStatus
+  const effectiveStatuses = useMemo(() => {
+    const out = new Map<string, ApplicationStatus>();
+    for (const [k, v] of mergedStatuses) out.set(k, v);
+    for (const [k, v] of optimisticStatuses) out.set(k, v);
+    return out;
+  }, [mergedStatuses, optimisticStatuses]);
 
   return (
     <LayoutGroup>
@@ -133,7 +164,7 @@ export function PipelineTable({ rows }: PipelineTableClientProps) {
           onRowClick={handleRowClick}
           selectedId={selectedId}
           onStatusChange={handleStatusChange}
-          optimisticStatuses={optimisticStatuses}
+          optimisticStatuses={effectiveStatuses}
         />
       </motion.div>
       {selectedId != null && (

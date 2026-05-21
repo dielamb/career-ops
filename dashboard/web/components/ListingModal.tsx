@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { ListingModal as RawListingModal, type ModalActionState } from './raw/ListingModal';
 import type { Report } from '@/lib/schemas';
 import { fadeUp } from '@/lib/motion-presets';
@@ -56,6 +57,7 @@ function usePollAction(startedLogPath: string | null, prefix: string) {
 }
 
 export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClientProps) {
+  const router = useRouter();
   const [loading, setLoading]     = useState(true);
   const [listing, setListing]     = useState<LoadedListing | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -67,14 +69,20 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
 
   const [contactoLogPath, setContactoLogPath] = useState<string | null>(null);
   const [coverLogPath, setCoverLogPath]       = useState<string | null>(null);
+  const [cachedContactoContent, setCachedContactoContent] = useState<string | null>(null);
+  const [cachedCoverContent, setCachedCoverContent]       = useState<string | null>(null);
   const [jdContent, setJdContent] = useState<string | null>(null);
   const [jdError, setJdError]     = useState<string | null>(null);
   const [jdLoading, setJdLoading] = useState<boolean>(false);
 
-  const { state: contactoState, content: contactoContent, elapsedSec: contactoElapsed } =
+  const { state: contactoState, content: contactoFreshContent, elapsedSec: contactoElapsed } =
     usePollAction(contactoLogPath, '/api/actions/contacto/status');
-  const { state: coverState, content: coverContent, elapsedSec: coverElapsed } =
+  const { state: coverState, content: coverFreshContent, elapsedSec: coverElapsed } =
     usePollAction(coverLogPath, '/api/actions/cover/status');
+
+  // Effective content: fresh poll result OR cached lookup from previous session
+  const contactoContent = contactoFreshContent ?? cachedContactoContent;
+  const coverContent    = coverFreshContent ?? cachedCoverContent;
 
   // GET /api/listing/[id] on mount + id change.
   useEffect(() => {
@@ -103,6 +111,32 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
+
+  // Lookup cached contacts + cover after listing loaded (persistence across modal close/reopen).
+  useEffect(() => {
+    if (!listing) return;
+    let cancelled = false;
+    setCachedContactoContent(null);
+    setCachedCoverContent(null);
+
+    fetch(`/api/actions/contacto/lookup?company=${encodeURIComponent(listing.report.title)}`)
+      .then(async (res) => {
+        if (cancelled || !res.ok) return;
+        const data = await res.json() as { content: string | null };
+        if (data.content) setCachedContactoContent(data.content);
+      })
+      .catch(() => { /* ignore */ });
+
+    fetch(`/api/actions/cover/lookup?listingId=${encodeURIComponent(String(listing.report.num))}`)
+      .then(async (res) => {
+        if (cancelled || !res.ok) return;
+        const data = await res.json() as { content: string | null };
+        if (data.content) setCachedCoverContent(data.content);
+      })
+      .catch(() => { /* ignore */ });
+
+    return () => { cancelled = true; };
+  }, [listing]);
 
   // Fetch job description content (raw URL fetch + extract text) after listing loaded.
   useEffect(() => {
@@ -160,9 +194,11 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
       });
       if (res.ok) {
         setMarkState('success');
-        setMarkMessage(`marked ${status.toLowerCase()}`);
+        setMarkMessage(`marked ${status.toLowerCase()} ✓`);
+        // Refresh server-rendered pages (/pipeline, /today) so updated status shows.
+        router.refresh();
         if (status === 'Applied') {
-          setTimeout(() => { onAfterApplied?.(); onClose(); }, 500);
+          setTimeout(() => { onAfterApplied?.(); onClose(); }, 800);
         }
       } else if (res.status === 423) {
         setMarkState('locked');
@@ -176,7 +212,7 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
       setMarkState('error');
       setMarkMessage(e instanceof Error ? e.message : 'network error');
     }
-  }, [listing, onClose, onAfterApplied]);
+  }, [listing, onClose, onAfterApplied, router]);
 
   const handleFindContacts = useCallback(async () => {
     if (!listing) return;
