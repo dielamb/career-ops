@@ -55,8 +55,11 @@ export async function GET() {
     const sizeBytes = stat.size;
 
     let status: ActiveScan['status'];
+    // claude CLI cold-start can take 60-90s before first byte hits the log
+    // (subscription auth handshake + agent warmup). Only mark FAILED if still
+    // empty after 5 minutes — most real scans complete in 2-3 min.
     if (sizeBytes === 0) {
-      status = ageSec > 10 ? 'failed' : 'pending';
+      status = ageSec > 300 ? 'failed' : 'pending';
     } else if (staleSec < 30) {
       status = 'running';
     } else {

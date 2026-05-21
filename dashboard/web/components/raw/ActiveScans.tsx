@@ -32,8 +32,13 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024).toFixed(1)}KB`;
 }
 
-export function ActiveScans({ scans, onOpenLog }: ActiveScansProps) {
-  if (scans.length === 0) return null;
+export interface ActiveScansComponentProps extends ActiveScansProps {
+  /** When true, show empty-state copy instead of returning null. */
+  showWhenEmpty?: boolean;
+}
+
+export function ActiveScans({ scans, onOpenLog, showWhenEmpty = false }: ActiveScansComponentProps) {
+  if (scans.length === 0 && !showWhenEmpty) return null;
 
   const runningCount = scans.filter((s) => s.status === 'running' || s.status === 'pending').length;
 
@@ -53,9 +58,14 @@ export function ActiveScans({ scans, onOpenLog }: ActiveScansProps) {
           )}
         </h2>
         <p className="font-mono text-[10px] uppercase tracking-widest text-ink-muted">
-          poll every 3s · last 1h
+          claude cold-start ~70s · full scan 2-3min
         </p>
       </header>
+      {scans.length === 0 ? (
+        <p data-testid="active-scans-empty" className="font-mono text-xs text-ink-muted">
+          No active scans. Add URL in sidebar to start one.
+        </p>
+      ) : (
       <ul className="flex flex-col gap-sm">
         {scans.map((scan) => (
           <li
@@ -85,6 +95,7 @@ export function ActiveScans({ scans, onOpenLog }: ActiveScansProps) {
           </li>
         ))}
       </ul>
+      )}
     </section>
   );
 }

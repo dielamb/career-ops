@@ -4,6 +4,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import { jsonOk, jsonError } from '@/lib/api-helpers';
 import { repoRoot } from '@/lib/api-paths';
+import { cleanClaudeEnv } from '@/lib/clean-claude-env';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,9 +35,9 @@ export async function POST(req: Request) {
   // Generate cover letter for a specific listing
   const prompt = `@${ofertaPath} @${profilePath} Generate a cover letter for listing #${listingId}. Focus on the cover letter only — not a full evaluation.`;
 
-  // Strip ANTHROPIC_API_KEY so `claude -p` uses subscription auth (Max).
-  const env = { ...process.env };
-  delete env.ANTHROPIC_API_KEY;
+  // Strip ANTHROPIC_API_KEY + CLAUDECODE/CLAUDE_CODE_* so the spawned claude
+  // runs as a standalone CLI on subscription auth.
+  const env = cleanClaudeEnv();
 
   const child = spawn('claude', ['-p', prompt], {
     cwd: root,

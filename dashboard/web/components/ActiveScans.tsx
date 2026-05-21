@@ -4,13 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ActiveScans as RawActiveScans, type ActiveScan } from './raw/ActiveScans';
 import { fadeUp } from '@/lib/motion-presets';
 
-const POLL_MS = 3000;
+const POLL_MS = 2000;
+const SCAN_STARTED_EVENT = 'careerops:scan-started';
 
 export function ActiveScans() {
   const [scans, setScans] = useState<ActiveScan[]>([]);
   const [openLogPath, setOpenLogPath] = useState<string | null>(null);
   const [logContent, setLogContent] = useState<string>('');
   const [logLoading, setLogLoading] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -22,9 +24,16 @@ export function ActiveScans() {
   }, []);
 
   useEffect(() => {
+    setMounted(true);
     refresh();
     const id = setInterval(refresh, POLL_MS);
-    return () => clearInterval(id);
+    // AddUrlWidget dispatches this immediately after POST /api/actions/add-url returns 202.
+    const onScanStarted = () => { refresh(); };
+    window.addEventListener(SCAN_STARTED_EVENT, onScanStarted);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener(SCAN_STARTED_EVENT, onScanStarted);
+    };
   }, [refresh]);
 
   const handleOpenLog = useCallback(async (path: string) => {
@@ -58,7 +67,8 @@ export function ActiveScans() {
     return () => window.removeEventListener('keydown', handler);
   }, [openLogPath, handleCloseLog]);
 
-  if (scans.length === 0) return null;
+  // Render nothing on SSR to avoid hydration mismatch — show widget once mounted.
+  if (!mounted) return null;
 
   return (
     <>
@@ -68,7 +78,7 @@ export function ActiveScans() {
         animate={fadeUp.animate}
         transition={fadeUp.transition}
       >
-        <RawActiveScans scans={scans} onOpenLog={handleOpenLog} />
+        <RawActiveScans scans={scans} onOpenLog={handleOpenLog} showWhenEmpty />
       </motion.div>
 
       <AnimatePresence>

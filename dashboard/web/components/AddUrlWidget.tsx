@@ -30,6 +30,10 @@ export function AddUrlWidget() {
       if (res.ok) {
         showToast('Scan started (~1-2 min). Watch progress in Active Scans on /today.', 'success');
         setUrl('');
+        // Tell ActiveScans widget to refresh immediately instead of waiting for the next poll tick.
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('careerops:scan-started'));
+        }
       } else {
         const body = await res.json().catch(() => ({}));
         showToast((body as { error?: string }).error ?? 'Failed to add URL', 'error');

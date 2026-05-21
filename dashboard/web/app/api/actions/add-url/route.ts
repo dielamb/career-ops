@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { jsonOk, jsonError } from '@/lib/api-helpers';
 import { repoRoot } from '@/lib/api-paths';
 import { validateUrl, InvalidUrlError } from '@/lib/spawn-mjs';
+import { cleanClaudeEnv } from '@/lib/clean-claude-env';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,9 +47,10 @@ export async function POST(req: Request) {
   // Prompt passes url as plain arg — no shell interpolation (array-form spawn).
   const prompt = `@${ofertaPath} @${profilePath} ${url}`;
 
-  // Strip ANTHROPIC_API_KEY so `claude -p` uses subscription auth (Max).
-  const env = { ...process.env };
-  delete env.ANTHROPIC_API_KEY;
+  // Strip ANTHROPIC_API_KEY + CLAUDECODE/CLAUDE_CODE_* so the spawned claude
+  // runs as a standalone CLI on subscription auth, even when the dev server
+  // itself was launched from inside a Claude Code session.
+  const env = cleanClaudeEnv();
 
   const child = spawn('claude', ['-p', prompt], {
     cwd: root,
