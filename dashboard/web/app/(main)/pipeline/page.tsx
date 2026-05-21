@@ -1,33 +1,41 @@
 import { parsePipeline } from '@/lib/parse-pipeline';
 import { parseApplications } from '@/lib/parse-applications';
-import { pipelinePath, applicationsPath } from '@/lib/api-paths';
+import { parseScanHistoryByUrl } from '@/lib/parse-scan-history';
+import { pipelinePath, applicationsPath, scanHistoryPath } from '@/lib/api-paths';
 import { PipelineTable } from '@/components/PipelineTable';
-import type { ParseError, PipelineEntry, Application } from '@/lib/schemas';
+import type { ParseError, Application, EnrichedPipelineEntry } from '@/lib/schemas';
 
-/**
- * /pipeline server page.
- *
- * Closes PAG-02: sortable + filterable table over 192 rows with filter chips
- * (state, source, score range), search-as-you-type, and modal-on-row-click.
- *
- * Pattern matches /today (Plan 05-01): server component invokes parsers directly
- * to avoid the SSR self-fetch pitfall.
- */
 export const dynamic = 'force-dynamic';
 
 export default async function PipelinePage() {
-  const [pipelineResult, applicationsResult] = await Promise.all([
+  const [pipelineResult, applicationsResult, scanHistory] = await Promise.all([
     parsePipeline(pipelinePath()),
     parseApplications(applicationsPath()),
+    parseScanHistoryByUrl(scanHistoryPath()),
   ]);
+
   const parseErrors: ParseError[] = pipelineResult.errors;
 
-  // Build map: pipeline num → application status (so /pipeline view reflects mark-sent updates).
-  // Exclude 'SKIP' — it is not a settable ApplicationStatus in the dropdown.
+  // num → application (for status, notes, date)
+  const appByNum = new Map<number, Application>();
+  for (const app of applicationsResult.data) appByNum.set(app.num, app);
+
+  // num → application status for the dropdown (exclude SKIP)
   const appStatusByNum = new Map<number, Exclude<Application['status'], 'SKIP'>>();
   for (const app of applicationsResult.data) {
     if (app.status !== 'SKIP') appStatusByNum.set(app.num, app.status);
   }
+
+  // Enrich pipeline rows with cross-source data
+  const rows: EnrichedPipelineEntry[] = pipelineResult.data.map((entry) => {
+    const app = entry.num != null ? appByNum.get(entry.num) : undefined;
+    return {
+      ...entry,
+      evalDate:  app?.date ?? null,
+      appNotes:  app?.notes ?? null,
+      firstSeen: scanHistory.get(entry.url) ?? null,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-lg">
@@ -45,7 +53,7 @@ export default async function PipelinePage() {
           </p>
         </div>
       )}
-      <PipelineTable rows={pipelineResult.data} appStatusByNum={Object.fromEntries(appStatusByNum)} />
+      <PipelineTable rows={rows} appStatusByNum={Object.fromEntries(appStatusByNum)} />
     </div>
   );
 }
