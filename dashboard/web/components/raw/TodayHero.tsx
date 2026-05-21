@@ -1,6 +1,7 @@
 import type { Application, PipelineEntry, ParseError } from '@/lib/schemas';
 import { ProgressMeter } from '@/components/ProgressMeter';
 import { ListingCard } from '@/components/ListingCard';
+import { ScanButton } from '@/components/ScanButton';
 
 export interface TodayHeroProps {
   applications: Application[];
@@ -80,20 +81,25 @@ export function TodayHero({ applications, pipeline, parseErrors, today, onOpenTo
         </div>
       )}
 
-      <header>
-        <p
-          className="font-mono text-xs uppercase tracking-wider text-ink-muted mb-sm"
-          data-testid="hero-section-label"
-        >
-          // Today
-        </p>
-        <h1
-          data-testid="today-hero-heading"
-          className="font-display text-5xl text-ink"
-          style={{ fontVariationSettings: '"wdth" 60', fontWeight: 800 }}
-        >
-          Today.
-        </h1>
+      <header className="flex items-end justify-between gap-md">
+        <div>
+          <p
+            className="font-mono text-xs uppercase tracking-wider text-ink-muted mb-sm"
+            data-testid="hero-section-label"
+          >
+            // Today
+          </p>
+          <h1
+            data-testid="today-hero-heading"
+            className="font-display text-5xl text-ink"
+            style={{ fontVariationSettings: '"wdth" 60', fontWeight: 800 }}
+          >
+            Today.
+          </h1>
+        </div>
+        <div className="pb-xs">
+          <ScanButton />
+        </div>
       </header>
 
       <section data-testid="progress-section">
