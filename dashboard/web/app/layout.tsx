@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
 import { ToastProvider } from "@/components/Toast";
-import { CommandPalette } from "@/components/CommandPalette";
 
 export const metadata: Metadata = {
   title: "career-ops",
@@ -27,13 +25,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <ToastProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1 p-3xl">{children}</main>
-          </div>
-          <CommandPalette />
-        </ToastProvider>
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );
