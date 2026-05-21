@@ -3,7 +3,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ListingModal as RawListingModal, type ModalActionState, type TabId } from './raw/ListingModal';
-import type { Report } from '@/lib/schemas';
+import { ApplicationSchema, type Application, type Report } from '@/lib/schemas';
+import { z } from 'zod';
+
+const ApplicationsResponseSchema = z.object({
+  data: z.array(ApplicationSchema),
+});
 import { fadeUp } from '@/lib/motion-presets';
 
 export interface ListingModalClientProps {
@@ -76,7 +81,7 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
   const [jdLoading, setJdLoading] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<TabId>('summary');
-  const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
+  const [applicationStatus, setApplicationStatus] = useState<Application['status'] | null>(null);
 
   const { state: contactoState, content: contactoFreshContent, elapsedSec: contactoElapsed } =
     usePollAction(contactoLogPath, '/api/actions/contacto/status');
@@ -116,6 +121,7 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
   }, [onClose]);
 
   // Fetch current application status (from applications.md) for the header pill.
+  // Refetch on mark-sent success so the pill reflects the new status immediately.
   useEffect(() => {
     if (!listing) return;
     let cancelled = false;
@@ -123,13 +129,14 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
     fetch('/api/applications')
       .then(async (res) => {
         if (cancelled || !res.ok) return;
-        const body = await res.json() as { data: Array<{ num: number; status: string }> };
-        const app = body.data.find((a) => a.num === listing.report.num);
+        const parsed = ApplicationsResponseSchema.safeParse(await res.json());
+        if (!parsed.success) return;
+        const app = parsed.data.data.find((a) => a.num === listing.report.num);
         if (app) setApplicationStatus(app.status);
       })
       .catch(() => { /* ignore */ });
     return () => { cancelled = true; };
-  }, [listing, markState]);
+  }, [listing, markState === 'success']);
 
   // Lookup cached contacts + cover after listing loaded (persistence across modal close/reopen).
   useEffect(() => {

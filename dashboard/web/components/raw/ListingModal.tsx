@@ -1,8 +1,20 @@
-import type { Report } from '@/lib/schemas';
+import type { Application, Report } from '@/lib/schemas';
 import { MarkdownProse } from '@/components/MarkdownProse';
 
 export type ModalActionState = 'idle' | 'pending' | 'success' | 'locked' | 'error';
 export type TabId = 'summary' | 'report' | 'contacts' | 'cover' | 'jd';
+
+// Status pill classes mirror StatusBadge but with header-scale sizing.
+const STATUS_PILL_CLASSES: Record<Application['status'], string> = {
+  Evaluated: 'bg-paper text-ink-soft',
+  Applied:   'bg-cyber text-ink',
+  Responded: 'bg-acid text-ink',
+  Interview: 'bg-ink text-acid',
+  Offer:     'bg-magenta text-paper',
+  Discarded: 'bg-chrome text-ink-muted line-through',
+  Rejected:  'bg-paper text-ink-dim line-through',
+  SKIP:      'bg-paper text-ink-muted italic',
+};
 
 export interface ListingModalProps {
   /** null while loading; Report once /api/listing/[id] resolves. */
@@ -34,7 +46,7 @@ export interface ListingModalProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
   /** Current application status from applications.md (shown as pill in header) */
-  applicationStatus?: string | null;
+  applicationStatus?: Application['status'] | null;
   /** Handlers. */
   onOpenInChrome: () => void;
   onMarkApplied: () => void;
@@ -418,15 +430,8 @@ export function ListingModal(props: ListingModalProps) {
               {applicationStatus && (
                 <span
                   data-testid="modal-status-pill"
-                  className={`px-2 py-0.5 border-[1.5px] border-ink font-bold tracking-widest text-[10px] ${
-                    applicationStatus === 'Applied' ? 'bg-cyber text-ink' :
-                    applicationStatus === 'Responded' ? 'bg-acid text-ink' :
-                    applicationStatus === 'Interview' ? 'bg-ink text-acid' :
-                    applicationStatus === 'Offer' ? 'bg-magenta text-paper' :
-                    applicationStatus === 'Discarded' ? 'bg-chrome text-ink-muted line-through' :
-                    applicationStatus === 'Rejected' ? 'bg-paper text-ink-dim line-through' :
-                    'bg-paper text-ink-soft'
-                  }`}
+                  data-status={applicationStatus}
+                  className={`px-2 py-0.5 border-[1.5px] border-ink font-bold tracking-widest text-[10px] ${STATUS_PILL_CLASSES[applicationStatus]}`}
                 >
                   {applicationStatus}
                 </span>
