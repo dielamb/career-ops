@@ -28,7 +28,7 @@ export function AddUrlWidget() {
         body: JSON.stringify({ url }),
       });
       if (res.ok) {
-        showToast('Evaluation started (~1-2 min). Refresh to see result.', 'success');
+        showToast('Scan started (~1-2 min). Watch progress in Active Scans on /today.', 'success');
         setUrl('');
       } else {
         const body = await res.json().catch(() => ({}));

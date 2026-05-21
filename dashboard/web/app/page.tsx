@@ -2,6 +2,7 @@ import { parseApplications } from '@/lib/parse-applications';
 import { parsePipeline } from '@/lib/parse-pipeline';
 import { applicationsPath, pipelinePath } from '@/lib/api-paths';
 import { TodayHero } from '@/components/TodayHero';
+import { ActiveScans } from '@/components/ActiveScans';
 import type { ParseError } from '@/lib/schemas';
 
 /**
@@ -25,11 +26,14 @@ export default async function TodayPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <TodayHero
-      applications={appsResult.data}
-      pipeline={pipeResult.data}
-      parseErrors={parseErrors}
-      today={today}
-    />
+    <div className="flex flex-col gap-lg">
+      <ActiveScans />
+      <TodayHero
+        applications={appsResult.data}
+        pipeline={pipeResult.data}
+        parseErrors={parseErrors}
+        today={today}
+      />
+    </div>
   );
 }
