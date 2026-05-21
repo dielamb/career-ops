@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { Sidebar as RawSidebar, type SidebarNavItem } from './raw/Sidebar';
+import { AddUrlWidget } from './AddUrlWidget';
 import { fadeUp } from '@/lib/motion-presets';
 
 /**
@@ -25,7 +26,7 @@ export function Sidebar() {
       animate={fadeUp.animate}
       transition={fadeUp.transition}
     >
-      <RawSidebar items={items} />
+      <RawSidebar items={items} footer={<AddUrlWidget />} />
     </motion.div>
   );
 }

@@ -11,6 +11,8 @@ export interface SidebarProps {
   items: SidebarNavItem[];
   /** Brand line shown above nav (e.g. "career-ops"). */
   brand?: string;
+  /** Optional content rendered below nav items (e.g. AddUrlWidget). */
+  footer?: React.ReactNode;
 }
 
 const ACTIVE_CLASSES =
@@ -21,7 +23,7 @@ const ENABLED_INACTIVE_CLASSES =
 const DISABLED_CLASSES =
   'bg-transparent text-ink-dim border-[2.5px] border-chrome font-mono italic cursor-not-allowed';
 
-export function Sidebar({ items, brand = 'career-ops' }: SidebarProps) {
+export function Sidebar({ items, brand = 'career-ops', footer }: SidebarProps) {
   return (
     <aside
       data-testid="sidebar"
@@ -78,6 +80,7 @@ export function Sidebar({ items, brand = 'career-ops' }: SidebarProps) {
           );
         })}
       </nav>
+      {footer}
     </aside>
   );
 }
