@@ -1,16 +1,18 @@
 'use client';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { TodayHero as RawTodayHero, type TodayHeroProps } from './raw/TodayHero';
 import { pixelBootUp } from '@/lib/motion-presets';
 
 /**
- * Client-side wrapper applying pixelBootUp on mount.
- * pixelBootUp animates the whole hero container in 3 CRT frames (50ms each).
- *
- * Note: spread the readonly arrays from pixelBootUp to satisfy Framer Motion's
- * mutable array type requirement (as const makes them readonly tuples).
+ * Client-side wrapper applying pixelBootUp on mount + wiring Top 5 [Open] to /pipeline?id=N.
  */
 export function TodayHero(props: TodayHeroProps) {
+  const router = useRouter();
+  const onOpenTopFive = (id: string) => {
+    router.push(`/pipeline?id=${encodeURIComponent(id)}`);
+  };
+
   return (
     <motion.div
       data-testid="motion-today-hero"
@@ -18,7 +20,7 @@ export function TodayHero(props: TodayHeroProps) {
       animate={{ opacity: [...pixelBootUp.animate.opacity] }}
       transition={{ duration: pixelBootUp.transition.duration, times: [...pixelBootUp.transition.times] }}
     >
-      <RawTodayHero {...props} />
+      <RawTodayHero {...props} onOpenTopFive={onOpenTopFive} />
     </motion.div>
   );
 }

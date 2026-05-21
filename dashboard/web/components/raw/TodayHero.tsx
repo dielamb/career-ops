@@ -8,6 +8,8 @@ export interface TodayHeroProps {
   parseErrors: ParseError[];
   /** YYYY-MM-DD of "today" (server-supplied for deterministic SSR). */
   today: string;
+  /** Called when user clicks [Open] on a Top 5 row. Receives pipeline entry num (1-based) as string. */
+  onOpenTopFive?: (id: string) => void;
 }
 
 /** Application is overdue follow-up if status='Applied' and applied >= 7 days ago. */
@@ -44,7 +46,7 @@ function deriveTopFive(pipeline: PipelineEntry[]): PipelineEntry[] {
     .slice(0, 5);
 }
 
-export function TodayHero({ applications, pipeline, parseErrors, today }: TodayHeroProps) {
+export function TodayHero({ applications, pipeline, parseErrors, today, onOpenTopFive }: TodayHeroProps) {
   // Progress stats: Applied / Responded / Interview / Total-Remaining
   const applied   = applications.filter((a) => a.status === 'Applied').length;
   const responded = applications.filter((a) => a.status === 'Responded' || a.status === 'Interview' || a.status === 'Offer').length;
@@ -145,6 +147,7 @@ export function TodayHero({ applications, pipeline, parseErrors, today }: TodayH
                   score={entry.score ?? 0}
                   status="Evaluated"
                   source={new URL(entry.url).hostname.replace(/^www\./, '')}
+                  onOpen={entry.num != null && onOpenTopFive ? () => onOpenTopFive(String(entry.num)) : undefined}
                 />
               </li>
             ))}
