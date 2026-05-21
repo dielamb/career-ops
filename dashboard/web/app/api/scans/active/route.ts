@@ -1,7 +1,28 @@
 import { promises as fs } from 'node:fs';
-import { jsonOk } from '@/lib/api-helpers';
+import { jsonOk, jsonError } from '@/lib/api-helpers';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * DELETE /api/scans/active?ts={timestamp}
+ * Removes /tmp/eval-{ts}.md so the scan disappears from the widget.
+ * Path traversal protected: ts must be all-digits.
+ */
+export async function DELETE(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const ts = searchParams.get('ts');
+  if (!ts || !/^\d+$/.test(ts)) return jsonError(400, 'Invalid ts');
+  const target = `/tmp/eval-${ts}.md`;
+  try {
+    await fs.unlink(target);
+    return jsonOk({ ok: true, deleted: target });
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return jsonOk({ ok: true, deleted: target, note: 'already gone' });
+    }
+    return jsonError(500, 'Failed to delete', { message: (err as Error).message });
+  }
+}
 
 /**
  * GET /api/scans/active

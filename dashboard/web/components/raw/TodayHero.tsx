@@ -11,6 +11,8 @@ export interface TodayHeroProps {
   today: string;
   /** Called when user clicks [Open] on a Top 5 row. Receives pipeline entry num (1-based) as string. */
   onOpenTopFive?: (id: string) => void;
+  /** Slot rendered between ProgressMeter and Follow-ups (used for ActiveScans widget). */
+  afterMetrics?: React.ReactNode;
 }
 
 /** Application is overdue follow-up if status='Applied' and applied >= 7 days ago. */
@@ -47,7 +49,7 @@ function deriveTopFive(pipeline: PipelineEntry[]): PipelineEntry[] {
     .slice(0, 5);
 }
 
-export function TodayHero({ applications, pipeline, parseErrors, today, onOpenTopFive }: TodayHeroProps) {
+export function TodayHero({ applications, pipeline, parseErrors, today, onOpenTopFive, afterMetrics }: TodayHeroProps) {
   // Progress stats: Applied / Responded / Interview / Total-Remaining
   const applied   = applications.filter((a) => a.status === 'Applied').length;
   const responded = applications.filter((a) => a.status === 'Responded' || a.status === 'Interview' || a.status === 'Offer').length;
@@ -105,6 +107,8 @@ export function TodayHero({ applications, pipeline, parseErrors, today, onOpenTo
       <section data-testid="progress-section">
         <ProgressMeter stats={stats} total={Math.max(1, total)} />
       </section>
+
+      {afterMetrics}
 
       <section data-testid="followups-section" className="flex flex-col gap-md">
         <h2 className="font-mono text-xs uppercase tracking-wider text-ink-muted">// Follow-ups Today</h2>

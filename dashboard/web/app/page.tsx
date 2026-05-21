@@ -26,14 +26,12 @@ export default async function TodayPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="flex flex-col gap-lg">
-      <ActiveScans />
-      <TodayHero
-        applications={appsResult.data}
-        pipeline={pipeResult.data}
-        parseErrors={parseErrors}
-        today={today}
-      />
-    </div>
+    <TodayHero
+      applications={appsResult.data}
+      pipeline={pipeResult.data}
+      parseErrors={parseErrors}
+      today={today}
+      afterMetrics={<ActiveScans />}
+    />
   );
 }

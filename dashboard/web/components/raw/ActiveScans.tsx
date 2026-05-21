@@ -10,6 +10,7 @@ export interface ActiveScan {
 export interface ActiveScansProps {
   scans: ActiveScan[];
   onOpenLog: (path: string) => void;
+  onDismiss: (ts: number) => void;
 }
 
 const STATUS_CLASSES: Record<ActiveScan['status'], string> = {
@@ -37,7 +38,7 @@ export interface ActiveScansComponentProps extends ActiveScansProps {
   showWhenEmpty?: boolean;
 }
 
-export function ActiveScans({ scans, onOpenLog, showWhenEmpty = false }: ActiveScansComponentProps) {
+export function ActiveScans({ scans, onOpenLog, onDismiss, showWhenEmpty = false }: ActiveScansComponentProps) {
   if (scans.length === 0 && !showWhenEmpty) return null;
 
   const runningCount = scans.filter((s) => s.status === 'running' || s.status === 'pending').length;
@@ -91,6 +92,15 @@ export function ActiveScans({ scans, onOpenLog, showWhenEmpty = false }: ActiveS
               className="ml-auto font-mono text-xs uppercase tracking-wider bg-ink text-bg px-sm py-xs border-[1.5px] border-ink hover:bg-cyber hover:text-ink"
             >
               [open log]
+            </button>
+            <button
+              type="button"
+              data-testid={`scan-dismiss-${scan.ts}`}
+              onClick={() => onDismiss(scan.ts)}
+              aria-label="Dismiss scan"
+              className="font-mono text-xs font-bold text-ink hover:text-magenta px-sm py-xs border-[1.5px] border-ink-muted hover:border-magenta bg-paper"
+            >
+              &times;
             </button>
           </li>
         ))}

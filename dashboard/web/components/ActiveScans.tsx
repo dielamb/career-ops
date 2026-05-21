@@ -54,6 +54,14 @@ export function ActiveScans() {
     }
   }, []);
 
+  const handleDismiss = useCallback(async (ts: number) => {
+    // Optimistic remove first so the UI feels instant.
+    setScans((prev) => prev.filter((s) => s.ts !== ts));
+    try {
+      await fetch(`/api/scans/active?ts=${ts}`, { method: 'DELETE' });
+    } catch { /* ignore — file may not exist; backend is idempotent */ }
+  }, []);
+
   const handleCloseLog = useCallback(() => {
     setOpenLogPath(null);
     setLogContent('');
@@ -78,7 +86,7 @@ export function ActiveScans() {
         animate={fadeUp.animate}
         transition={fadeUp.transition}
       >
-        <RawActiveScans scans={scans} onOpenLog={handleOpenLog} showWhenEmpty />
+        <RawActiveScans scans={scans} onOpenLog={handleOpenLog} onDismiss={handleDismiss} showWhenEmpty />
       </motion.div>
 
       <AnimatePresence>

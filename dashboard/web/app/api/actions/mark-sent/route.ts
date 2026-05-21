@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 const MarkSentBody = z.object({
   id: z.string().min(1),
-  status: z.enum(['Applied', 'Responded', 'Interview', 'Offer', 'Rejected', 'Discarded']),
+  status: z.enum(['Evaluated', 'Applied', 'Responded', 'Interview', 'Offer', 'Rejected', 'Discarded']),
 });
 
 /**
