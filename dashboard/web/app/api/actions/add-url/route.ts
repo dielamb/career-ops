@@ -46,11 +46,16 @@ export async function POST(req: Request) {
   // Prompt passes url as plain arg — no shell interpolation (array-form spawn).
   const prompt = `@${ofertaPath} @${profilePath} ${url}`;
 
+  // Strip ANTHROPIC_API_KEY so `claude -p` uses subscription auth (Max).
+  const env = { ...process.env };
+  delete env.ANTHROPIC_API_KEY;
+
   const child = spawn('claude', ['-p', prompt], {
     cwd: root,
     detached: true,
     stdio: ['ignore', logFd, logFd],
     shell: false,
+    env,
   });
   child.unref();
 

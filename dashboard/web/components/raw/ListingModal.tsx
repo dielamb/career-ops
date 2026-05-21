@@ -20,9 +20,15 @@ export interface ListingModalProps {
   /** Contacto action */
   contactoState: ModalActionState;
   contactoContent: string | null;
+  contactoElapsedSec?: number;
   /** Cover letter action */
   coverState: ModalActionState;
   coverContent: string | null;
+  coverElapsedSec?: number;
+  /** Original job description content fetched from listing URL */
+  jdContent?: string | null;
+  jdError?: string | null;
+  jdLoading?: boolean;
   /** Handlers. */
   onOpenInChrome: () => void;
   onMarkApplied: () => void;
@@ -32,12 +38,19 @@ export interface ListingModalProps {
   onClose: () => void;
 }
 
+function formatElapsed(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
 export function ListingModal(props: ListingModalProps) {
   const {
     report, pdfHref, loading, loadError,
     applyState, applyMessage, markState, markMessage,
-    contactoState, contactoContent,
-    coverState, coverContent,
+    contactoState, contactoContent, contactoElapsedSec = 0,
+    coverState, coverContent, coverElapsedSec = 0,
+    jdContent = null, jdError = null, jdLoading = false,
     onOpenInChrome, onMarkApplied, onMarkDiscarded,
     onFindContacts, onGenerateCover, onClose,
   } = props;
@@ -129,7 +142,12 @@ export function ListingModal(props: ListingModalProps) {
               </div>
             )}
             {contactoState === 'pending' && (
-              <p className="font-mono text-xs text-ink-muted">// searching contacts…</p>
+              <div className="border-t-[2px] border-cyber pt-md flex items-center gap-sm" data-testid="modal-contacto-pending">
+                <span className="inline-block w-3 h-3 bg-cyber animate-pulse" aria-hidden="true" />
+                <p className="font-mono text-xs text-cyber uppercase tracking-wider">
+                  // searching contacts… ({formatElapsed(contactoElapsedSec)})
+                </p>
+              </div>
             )}
 
             {/* Cover letter result */}
@@ -149,11 +167,29 @@ export function ListingModal(props: ListingModalProps) {
               </div>
             )}
             {coverState === 'pending' && (
-              <p className="font-mono text-xs text-ink-muted">// generating cover letter…</p>
+              <div className="border-t-[2px] border-acid pt-md flex items-center gap-sm" data-testid="modal-cover-pending">
+                <span className="inline-block w-3 h-3 bg-acid animate-pulse" aria-hidden="true" />
+                <p className="font-mono text-xs text-ink-soft uppercase tracking-wider">
+                  // generating cover letter… ({formatElapsed(coverElapsedSec)})
+                </p>
+              </div>
             )}
           </section>
 
           <section data-testid="modal-pdf-pane" className="bg-paper border-[1.5px] border-ink-muted overflow-hidden flex flex-col">
+            <div className="border-b-[1.5px] border-ink-muted p-sm font-mono text-xs uppercase tracking-wider text-ink-muted bg-paper">
+              // Job description (original posting)
+              {report?.url && (
+                <a
+                  href={report.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-sm text-cyber underline hover:bg-cyber hover:text-ink hover:no-underline"
+                >
+                  open original ↗
+                </a>
+              )}
+            </div>
             {pdfHref ? (
               <iframe
                 data-testid="modal-pdf-iframe"
@@ -161,10 +197,24 @@ export function ListingModal(props: ListingModalProps) {
                 title="Listing PDF"
                 className="w-full h-full min-h-[480px] border-0"
               />
+            ) : jdLoading ? (
+              <div data-testid="modal-jd-loading" className="p-md font-mono text-sm text-ink-muted flex items-center gap-sm">
+                <span className="inline-block w-3 h-3 bg-cyber animate-pulse" aria-hidden="true" />
+                Fetching original posting…
+              </div>
+            ) : jdContent ? (
+              <div data-testid="modal-jd-content" className="p-md overflow-y-auto max-h-[80vh] font-body text-sm text-ink-soft whitespace-pre-wrap leading-relaxed">
+                {jdContent}
+              </div>
             ) : report ? (
-              <div data-testid="modal-pdf-missing" className="p-md overflow-y-auto max-h-[80vh]">
+              <div data-testid="modal-jd-missing" className="p-md overflow-y-auto max-h-[80vh]">
+                {jdError && (
+                  <p className="font-mono text-xs text-magenta mb-md">
+                    ⚠ {jdError}
+                  </p>
+                )}
                 <p className="font-mono text-xs uppercase tracking-wider text-ink-muted mb-md">
-                  // PDF unavailable — full report below
+                  // Showing career-ops report body as fallback
                 </p>
                 <MarkdownProse content={report.body} />
               </div>

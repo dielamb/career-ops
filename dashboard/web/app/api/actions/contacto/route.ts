@@ -46,11 +46,18 @@ export async function POST(req: Request) {
   // Pass prompt as array args — no shell interpolation.
   const prompt = `@${contactoPath} @${profilePath} company=${company}`;
 
+  // Strip ANTHROPIC_API_KEY so `claude -p` falls back to subscription auth (Max account).
+  // ANTHROPIC_API_KEY in env makes claude CLI use API billing which fails for subscription users.
+  // Equivalent to shell: `env -u ANTHROPIC_API_KEY claude -p "..."`
+  const env = { ...process.env };
+  delete env.ANTHROPIC_API_KEY;
+
   const child = spawn('claude', ['-p', prompt], {
     cwd: root,
     detached: true,
     stdio: ['ignore', logFd, logFd],
     shell: false,
+    env,
   });
   child.unref();
 

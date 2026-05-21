@@ -17,15 +17,26 @@ interface LoadedListing { report: Report; pdfPath: string | null; }
 function usePollAction(startedLogPath: string | null, prefix: string) {
   const [state, setState] = useState<ModalActionState>('idle');
   const [content, setContent] = useState<string | null>(null);
+  const [elapsedSec, setElapsedSec] = useState<number>(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stop = useCallback(() => {
     if (pollRef.current != null) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (tickRef.current != null) { clearInterval(tickRef.current); tickRef.current = null; }
   }, []);
 
   useEffect(() => {
     if (!startedLogPath) return;
     setState('pending');
+    setContent(null);
+    setElapsedSec(0);
+    const startTs = Date.now();
+    // Tick every 1s for elapsed counter UI
+    tickRef.current = setInterval(() => {
+      setElapsedSec(Math.floor((Date.now() - startTs) / 1000));
+    }, 1000);
+    // Poll status every 3s
     pollRef.current = setInterval(async () => {
       try {
         const res = await fetch(`${prefix}?logPath=${encodeURIComponent(startedLogPath)}`);
@@ -37,11 +48,11 @@ function usePollAction(startedLogPath: string | null, prefix: string) {
           setContent(data.content || null);
         }
       } catch { /* blip */ }
-    }, 5000);
+    }, 3000);
     return stop;
   }, [startedLogPath, prefix, stop]);
 
-  return { state, content };
+  return { state, content, elapsedSec };
 }
 
 export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClientProps) {
@@ -56,10 +67,13 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
 
   const [contactoLogPath, setContactoLogPath] = useState<string | null>(null);
   const [coverLogPath, setCoverLogPath]       = useState<string | null>(null);
+  const [jdContent, setJdContent] = useState<string | null>(null);
+  const [jdError, setJdError]     = useState<string | null>(null);
+  const [jdLoading, setJdLoading] = useState<boolean>(false);
 
-  const { state: contactoState, content: contactoContent } =
+  const { state: contactoState, content: contactoContent, elapsedSec: contactoElapsed } =
     usePollAction(contactoLogPath, '/api/actions/contacto/status');
-  const { state: coverState, content: coverContent } =
+  const { state: coverState, content: coverContent, elapsedSec: coverElapsed } =
     usePollAction(coverLogPath, '/api/actions/cover/status');
 
   // GET /api/listing/[id] on mount + id change.
@@ -89,6 +103,26 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
+
+  // Fetch job description content (raw URL fetch + extract text) after listing loaded.
+  useEffect(() => {
+    if (!listing) return;
+    let cancelled = false;
+    setJdContent(null);
+    setJdError(null);
+    setJdLoading(true);
+    fetch(`/api/listing/${encodeURIComponent(id)}/jd`)
+      .then(async (res) => {
+        if (cancelled) return;
+        if (!res.ok) { setJdError(`Fetch failed (${res.status})`); return; }
+        const data = await res.json() as { url: string | null; content: string | null; error: string | null };
+        if (data.content) setJdContent(data.content);
+        if (data.error) setJdError(data.error);
+      })
+      .catch((e) => { if (!cancelled) setJdError(e instanceof Error ? e.message : 'Network error'); })
+      .finally(() => { if (!cancelled) setJdLoading(false); });
+    return () => { cancelled = true; };
+  }, [id, listing]);
 
   const handleOpenInChrome = useCallback(async () => {
     if (!listing) return;
@@ -197,8 +231,13 @@ export function ListingModal({ id, onClose, onAfterApplied }: ListingModalClient
         markMessage={markMessage}
         contactoState={contactoState}
         contactoContent={contactoContent}
+        contactoElapsedSec={contactoElapsed}
         coverState={coverState}
         coverContent={coverContent}
+        coverElapsedSec={coverElapsed}
+        jdContent={jdContent}
+        jdError={jdError}
+        jdLoading={jdLoading}
         onOpenInChrome={handleOpenInChrome}
         onMarkApplied={() => postMarkSent('Applied')}
         onMarkDiscarded={() => postMarkSent('Discarded')}

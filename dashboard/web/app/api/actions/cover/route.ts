@@ -34,11 +34,16 @@ export async function POST(req: Request) {
   // Generate cover letter for a specific listing
   const prompt = `@${ofertaPath} @${profilePath} Generate a cover letter for listing #${listingId}. Focus on the cover letter only — not a full evaluation.`;
 
+  // Strip ANTHROPIC_API_KEY so `claude -p` uses subscription auth (Max).
+  const env = { ...process.env };
+  delete env.ANTHROPIC_API_KEY;
+
   const child = spawn('claude', ['-p', prompt], {
     cwd: root,
     detached: true,
     stdio: ['ignore', logFd, logFd],
     shell: false,
+    env,
   });
   child.unref();
 
