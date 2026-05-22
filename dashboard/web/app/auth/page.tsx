@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
 import { motion, useReducedMotion } from 'framer-motion';
 import { fadeUp, pixelBootUp } from '@/lib/motion-presets';
 import { useToast } from '@/components/Toast';
@@ -9,6 +11,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
+  const router = useRouter();
   const { showToast } = useToast();
   const shouldReduceMotion = useReducedMotion();
   const motion1 = shouldReduceMotion ? {} : pixelBootUp;
@@ -18,15 +21,28 @@ export default function AuthPage() {
     e.preventDefault();
     setPending(true);
     try {
-      console.log('[auth] sign in stub:', { email });
-      showToast('Auth not yet configured — Supabase coming soon', 'info');
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      router.refresh(); // Required: re-render Server Components with new session before navigating
+      router.push('/');
     } finally {
       setPending(false);
     }
   }
 
   async function handleGoogleOAuth() {
-    showToast('Google OAuth coming soon', 'info');
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) showToast(error.message, 'error');
   }
 
   return (
