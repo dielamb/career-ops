@@ -1,35 +1,53 @@
-import { parseApplications } from '@/lib/parse-applications';
-import { parsePipeline } from '@/lib/parse-pipeline';
-import { applicationsPath, pipelinePath } from '@/lib/api-paths';
+import { createServerSupabase } from '@/lib/supabase-server';
 import { TodayHero } from '@/components/TodayHero';
 import { ActiveScans } from '@/components/ActiveScans';
-import type { ParseError } from '@/lib/schemas';
+import type { Application, PipelineEntry } from '@/lib/schemas';
 
-/**
- * /today landing page.
- *
- * Server component: directly invokes the same parsers the API routes use
- * (NOT fetch('/api/applications') — that creates an SSR self-fetch loop).
- *
- * Closes PAG-01 (ProgressMeter + Follow-ups + Top 5) and PAG-05 (pixelBootUp via TodayHero wrapper).
- */
 export const dynamic = 'force-dynamic';
 
 export default async function TodayPage() {
-  const [appsResult, pipeResult] = await Promise.all([
-    parseApplications(applicationsPath()),
-    parsePipeline(pipelinePath()),
+  const supabase = await createServerSupabase();
+
+  const [{ data: dbApplications }, { data: dbPipeline }] = await Promise.all([
+    supabase.from('applications').select('*').order('created_at', { ascending: false }),
+    supabase.from('pipeline').select('*').order('created_at', { ascending: false }),
   ]);
 
-  const parseErrors: ParseError[] = [...appsResult.errors, ...pipeResult.errors];
-  // Server-supplied "today" (YYYY-MM-DD), localtime — single user, single timezone.
+  // Map Supabase rows → legacy Application interface (TodayHero expects this shape)
+  const applications: Application[] = (dbApplications ?? []).map((row, i) => ({
+    num:        i + 1,
+    date:       row.submitted_at ? row.submitted_at.slice(0, 10) : row.created_at.slice(0, 10),
+    company:    row.company,
+    role:       row.role,
+    score:      null,
+    status:     'Applied' as Application['status'],
+    pdf:        false,
+    reportPath: null,
+    notes:      row.notes ?? '',
+  }));
+
+  // Map Supabase rows → legacy PipelineEntry interface
+  const pipeline: PipelineEntry[] = (dbPipeline ?? []).map((row) => ({
+    state:   (row.status === 'evaluated' ? 'evaluated'
+             : row.status === 'skipped'  ? 'skipped'
+             : row.status === 'error'    ? 'error'
+             :                             'pending') as PipelineEntry['state'],
+    num:     null,
+    url:     row.url ?? '',
+    company: row.company ?? null,
+    title:   row.title ?? null,
+    score:   row.score ?? null,
+    pdf:     row.pdf_path != null,
+    note:    row.notes ?? null,
+  }));
+
   const today = new Date().toISOString().slice(0, 10);
 
   return (
     <TodayHero
-      applications={appsResult.data}
-      pipeline={pipeResult.data}
-      parseErrors={parseErrors}
+      applications={applications}
+      pipeline={pipeline}
+      parseErrors={[]}
       today={today}
       afterMetrics={<ActiveScans />}
     />
