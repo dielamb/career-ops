@@ -1,0 +1,1492 @@
+[
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779390622863,
+    "resolvedAt": 1779390622905
+  },
+  {
+    "prompt": "notify",
+    "keywords": [
+      "notify"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779390688563,
+    "resolvedAt": 1779390776589
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779390714270
+  },
+  {
+    "prompt": "/design-shotgun",
+    "keywords": [
+      "design",
+      "shotgun"
+    ],
+    "agent": "architect",
+    "outcome": "pending",
+    "timestamp": 1779390714303
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779390742970
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779390743604
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779390881144,
+    "resolvedAt": 1779390883194
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779390881146,
+    "resolvedAt": 1779390881187
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779390925535
+  },
+  {
+    "prompt": "! echo '{\"api_key\": \"sk-proj-Y4S91agvlPhsbTy8LwwRX1lWgtjTv4zzjKnfUSXMq4fM0w0yU-uHhl7srnhPJy77utOMh4-",
+    "keywords": [
+      "0ajt3blbkfj2atege9pjc0m92sgg36w1zaxpqfn29befnnymuruefv54q",
+      "3utipnx8trujkacie2hbh9ld3wa",
+      "api",
+      "echo",
+      "gstack",
+      "json",
+      "key",
+      "openai",
+      "proj",
+      "uhhl7srnhpjy77utomh4",
+      "y4s91agvlphsbty8lwwrx1lwgtjtv4zzjknfusxmq4fm0w0yu"
+    ],
+    "agent": "backend-dev",
+    "outcome": "pending",
+    "timestamp": 1779390925611
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779390965620,
+    "resolvedAt": 1779390970088
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779390965807,
+    "resolvedAt": 1779390980467
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779390992122,
+    "resolvedAt": 1779390996940
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779390992125,
+    "resolvedAt": 1779390992166
+  },
+  {
+    "prompt": "notify",
+    "keywords": [
+      "notify"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391082664
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391163596
+  },
+  {
+    "prompt": "balans dodany",
+    "keywords": [
+      "balans",
+      "dodany"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391163629
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391185752
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391245931
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391251673
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779391251674,
+    "resolvedAt": 1779391251721
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391275130
+  },
+  {
+    "prompt": "<task-notification>\n<task-id>b1te8u4gv</task-id>\n<tool-use-id>toolu_01LzYHwQPMqyka5T1o5MdA2a</tool-u",
+    "keywords": [
+      "01lzyhwqpmqyka5t1o5mda2a",
+      "23527218",
+      "25834d22c013",
+      "4ee0",
+      "501",
+      "9383",
+      "added",
+      "after",
+      "b1te8u4gv",
+      "b1te8u4gv",
+      "background",
+      "binary",
+      "claude",
+      "code",
+      "command",
+      "completed",
+      "completed",
+      "credits",
+      "design",
+      "exit",
+      "fe08",
+      "file",
+      "file",
+      "michalmaciejewski",
+      "notification",
+      "notification",
+      "output",
+      "output",
+      "output",
+      "private",
+      "status",
+      "status",
+      "summary",
+      "summary",
+      "task",
+      "task",
+      "task",
+      "task",
+      "tasks",
+      "test",
+      "tmp",
+      "tool",
+      "tool",
+      "toolu",
+      "use",
+      "use",
+      "users"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391275203
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391293071,
+    "resolvedAt": 1779391417016
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391293309,
+    "resolvedAt": 1779391414602
+  },
+  {
+    "prompt": "notify",
+    "keywords": [
+      "notify"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391333679
+  },
+  {
+    "prompt": "status",
+    "keywords": [
+      "status"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391401255,
+    "resolvedAt": 1779391423995
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391428887,
+    "resolvedAt": 1779391431291
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779391428891,
+    "resolvedAt": 1779391428931
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391429178,
+    "resolvedAt": 1779391612957
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779391429293,
+    "resolvedAt": 1779391431331
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391492185,
+    "resolvedAt": 1779391613049
+  },
+  {
+    "prompt": "notify",
+    "keywords": [
+      "notify"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391496943
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779391617456,
+    "resolvedAt": 1779391617500
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391617548
+  },
+  {
+    "prompt": "<task-notification>\n<task-id>ab709e935ce22ec85</task-id>\n<tool-use-id>toolu_01C1bAKvV2dgjK6qhUmTTbsv",
+    "keywords": [
+      "01c1bakvv2dgjk6qhumttbsv",
+      "20260521",
+      "206317",
+      "23443",
+      "23527218",
+      "25834d22c013",
+      "4ee0",
+      "501",
+      "5mb",
+      "9383",
+      "ab709e935ce22ec85",
+      "ab709e935ce22ec85",
+      "agent",
+      "auth",
+      "auth",
+      "blocking",
+      "career",
+      "check",
+      "claude",
+      "com",
+      "common",
+      "completed",
+      "completed",
+      "design",
+      "designs",
+      "designs",
+      "done",
+      "duration",
+      "duration",
+      "email",
+      "example",
+      "expected",
+      "false",
+      "fe08",
+      "field",
+      "file",
+      "file",
+      "file",
+      "flag",
+      "generate",
+      "generated",
+      "generated",
+      "gstack",
+      "issue",
+      "michalmaciejewski",
+      "michalmaciejewski",
+      "minor",
+      "mockup",
+      "mockup",
+      "neither",
+      "notes",
+      "notification",
+      "notification",
+      "ops",
+      "output",
+      "output",
+      "output",
+      "page",
+      "page",
+      "pass",
+      "placeholder",
+      "png",
+      "private",
+      "projects",
+      "quality",
+      "result",
+      "result",
+      "result",
+      "retro",
+      "santifer",
+      "saved",
+      "saved",
+      "status",
+      "status",
+      "successfully",
+      "summary",
+      "summary",
+      "synthetic",
+      "task",
+      "task",
+      "task",
+      "task",
+      "tasks",
+      "terminal",
+      "text",
+      "tmp",
+      "tokens",
+      "tokens",
+      "tool",
+      "tool",
+      "tool",
+      "tool",
+      "toolu",
+      "total",
+      "total",
+      "two",
+      "usage",
+      "usage",
+      "use",
+      "use",
+      "users",
+      "users",
+      "uses",
+      "uses",
+      "variant",
+      "variant",
+      "variant",
+      "visible",
+      "you"
+    ],
+    "agent": "reviewer",
+    "outcome": "pending",
+    "timestamp": 1779391617630
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779391620786,
+    "resolvedAt": 1779391620827
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779391632548,
+    "resolvedAt": 1779391637207
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779391632551,
+    "resolvedAt": 1779391632591
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391681410,
+    "resolvedAt": 1779392406801
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391690888,
+    "resolvedAt": 1779392406900
+  },
+  {
+    "prompt": "notify",
+    "keywords": [
+      "notify"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779391700626
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392392774
+  },
+  {
+    "prompt": "jak praca agentow?",
+    "keywords": [
+      "agentow",
+      "jak",
+      "praca"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392392839
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779392409618,
+    "resolvedAt": 1779392412244
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779392409620,
+    "resolvedAt": 1779392409661
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392431573,
+    "resolvedAt": 1779392539527
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392445425,
+    "resolvedAt": 1779392554270
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392468219
+  },
+  {
+    "prompt": "działaja juz prawie 20 min",
+    "keywords": [
+      "aja",
+      "dzia",
+      "juz",
+      "min",
+      "prawie"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392468295
+  },
+  {
+    "prompt": "status",
+    "keywords": [
+      "status"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392536507,
+    "resolvedAt": 1779392547778
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392554563,
+    "resolvedAt": 1779392623265
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779392554567,
+    "resolvedAt": 1779392554607
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392565558,
+    "resolvedAt": 1779392617455
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392570671,
+    "resolvedAt": 1779392617353
+  },
+  {
+    "prompt": "notify",
+    "keywords": [
+      "notify"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779392623161,
+    "resolvedAt": 1779392623306
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392623356
+  },
+  {
+    "prompt": "<task-notification>\n<task-id>aacd97356c061042e</task-id>\n<tool-use-id>toolu_01SzXyLWHXDwC3GSxF5wnq7N",
+    "keywords": [
+      "01szxylwhxdwc3gsxf5wnq7n",
+      "1222084",
+      "1536x1024",
+      "1536x1024",
+      "20260521",
+      "23527218",
+      "25834d22c013",
+      "40665",
+      "4ee0",
+      "501",
+      "9383",
+      "aacd97356c061042e",
+      "aacd97356c061042e",
+      "agent",
+      "api",
+      "api",
+      "around",
+      "auth",
+      "auth",
+      "base64",
+      "binary",
+      "binary",
+      "calling",
+      "career",
+      "changed",
+      "check",
+      "claude",
+      "command",
+      "completed",
+      "completed",
+      "data",
+      "decoded",
+      "design",
+      "designs",
+      "directly",
+      "done",
+      "due",
+      "duration",
+      "duration",
+      "expects",
+      "failing",
+      "fe08",
+      "file",
+      "file",
+      "file",
+      "final",
+      "final",
+      "format",
+      "from",
+      "generate",
+      "generate",
+      "generated",
+      "generations",
+      "gpt",
+      "gpt",
+      "gstack",
+      "has",
+      "high",
+      "image",
+      "image",
+      "image",
+      "image",
+      "images",
+      "images",
+      "issues",
+      "michalmaciejewski",
+      "michalmaciejewski",
+      "model",
+      "notification",
+      "notification",
+      "openai",
+      "ops",
+      "output",
+      "output",
+      "output",
+      "page",
+      "page",
+      "pass",
+      "path",
+      "png",
+      "png",
+      "post",
+      "private",
+      "projects",
+      "quality",
+      "quality",
+      "response",
+      "responses",
+      "result",
+      "result",
+      "returning",
+      "santifer",
+      "saved",
+      "silently",
+      "size",
+      "splash",
+      "status",
+      "status",
+      "streaming",
+      "summary",
+      "summary",
+      "summary",
+      "task",
+      "task",
+      "task",
+      "task",
+      "tasks",
+      "tmp",
+      "tokens",
+      "tokens",
+      "tool",
+      "tool",
+      "tool",
+      "tool",
+      "toolu",
+      "total",
+      "total",
+      "true",
+      "usage",
+      "usage",
+      "use",
+      "use",
+      "users",
+      "users",
+      "uses",
+      "uses",
+      "variant",
+      "variant",
+      "variant",
+      "worked",
+      "y2k"
+    ],
+    "agent": "reviewer",
+    "outcome": "pending",
+    "timestamp": 1779392623445
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392663628,
+    "resolvedAt": 1779392981185
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779392663633,
+    "resolvedAt": 1779392663676
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392672876,
+    "resolvedAt": 1779392977540
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779392680194,
+    "resolvedAt": 1779392981231
+  },
+  {
+    "prompt": "notify",
+    "keywords": [
+      "notify"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779392732137,
+    "resolvedAt": 1779392857933
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "failure",
+    "timestamp": 1779392981278,
+    "resolvedAt": 1779392981322
+  },
+  {
+    "prompt": "<task-notification>\n<task-id>a974f26b31c2cbe3f</task-id>\n<tool-use-id>toolu_01NSd6HcevbjbG8g6YVVPuC2",
+    "keywords": [
+      "01nsd6hcevbjbg8g6yvvpuc2",
+      "20260521",
+      "23527218",
+      "24348",
+      "25834d22c013",
+      "429",
+      "429",
+      "444758",
+      "4ee0",
+      "501",
+      "9383",
+      "a974f26b31c2cbe3f",
+      "a974f26b31c2cbe3f",
+      "account",
+      "account",
+      "account",
+      "account",
+      "account",
+      "add",
+      "agent",
+      "all",
+      "all",
+      "alternatively",
+      "api",
+      "api",
+      "api",
+      "api",
+      "api",
+      "attempts",
+      "attempts",
+      "auth",
+      "billing",
+      "billing",
+      "binary",
+      "binary",
+      "brief",
+      "but",
+      "career",
+      "check",
+      "claude",
+      "claude",
+      "com",
+      "command",
+      "command",
+      "completed",
+      "completed",
+      "constructed",
+      "correctly",
+      "credits",
+      "credits",
+      "current",
+      "dall",
+      "dall",
+      "design",
+      "design",
+      "design",
+      "design",
+      "design",
+      "designs",
+      "details",
+      "different",
+      "directory",
+      "dist",
+      "duration",
+      "duration",
+      "error",
+      "exceeded",
+      "exceeded",
+      "exceeded",
+      "exhausted",
+      "exists",
+      "explicit",
+      "failed",
+      "fe08",
+      "file",
+      "file",
+      "free",
+      "fully",
+      "generation",
+      "generation",
+      "generation",
+      "gstack",
+      "gstack",
+      "gstack",
+      "gstack",
+      "has",
+      "has",
+      "has",
+      "hit",
+      "https",
+      "image",
+      "image",
+      "issue",
+      "its",
+      "its",
+      "itself",
+      "json",
+      "json",
+      "key",
+      "key",
+      "key",
+      "likely",
+      "likely",
+      "limit",
+      "michalmaciejewski",
+      "michalmaciejewski",
+      "michalmaciejewski",
+      "next",
+      "notification",
+      "notification",
+      "once",
+      "openai",
+      "openai",
+      "openai",
+      "openai",
+      "openai",
+      "openai",
+      "openai",
+      "openai",
+      "openai",
+      "ops",
+      "output",
+      "output",
+      "output",
+      "output",
+      "page",
+      "paid",
+      "platform",
+      "pre",
+      "prepared",
+      "private",
+      "projects",
+      "quota",
+      "quota",
+      "quota",
+      "quota",
+      "quota",
+      "quota",
+      "ready",
+      "ready",
+      "regenerate",
+      "relies",
+      "remaining",
+      "restored",
+      "result",
+      "result",
+      "returned",
+      "run",
+      "run",
+      "santifer",
+      "set",
+      "skills",
+      "splash",
+      "status",
+      "status",
+      "steps",
+      "summary",
+      "summary",
+      "task",
+      "task",
+      "task",
+      "task",
+      "tasks",
+      "then",
+      "tier",
+      "tmp",
+      "tokens",
+      "tokens",
+      "tokens",
+      "tool",
+      "tool",
+      "tool",
+      "tool",
+      "toolu",
+      "total",
+      "total",
+      "unblock",
+      "update",
+      "usage",
+      "usage",
+      "use",
+      "use",
+      "users",
+      "users",
+      "users",
+      "uses",
+      "uses",
+      "uses",
+      "variant",
+      "variant",
+      "via",
+      "y2k",
+      "y2k",
+      "you",
+      "your"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392981408
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779392983444,
+    "resolvedAt": 1779393125592
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393004026,
+    "resolvedAt": 1779393125767
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779393036274,
+    "resolvedAt": 1779393036318
+  },
+  {
+    "prompt": "notify",
+    "keywords": [
+      "notify"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393059334
+  },
+  {
+    "prompt": "pre-edit",
+    "keywords": [
+      "edit",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393172447,
+    "resolvedAt": 1779393178683
+  },
+  {
+    "prompt": "post-edit",
+    "keywords": [
+      "edit",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393172486,
+    "resolvedAt": 1779393178720
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393180967,
+    "resolvedAt": 1779393236338
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393181076,
+    "resolvedAt": 1779393243532
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779393222977,
+    "resolvedAt": 1779393226930
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779393222980,
+    "resolvedAt": 1779393223020
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393239900
+  },
+  {
+    "prompt": "/design-shotgun",
+    "keywords": [
+      "design",
+      "shotgun"
+    ],
+    "agent": "architect",
+    "outcome": "pending",
+    "timestamp": 1779393239935
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393246535,
+    "resolvedAt": 1779396389808
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393246634,
+    "resolvedAt": 1779396389894
+  },
+  {
+    "prompt": "pre-edit",
+    "keywords": [
+      "edit",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393338638,
+    "resolvedAt": 1779393439620
+  },
+  {
+    "prompt": "post-edit",
+    "keywords": [
+      "edit",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779393338683,
+    "resolvedAt": 1779393439669
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779393483962,
+    "resolvedAt": 1779393484004
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779396398996,
+    "resolvedAt": 1779396403417
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779396399000,
+    "resolvedAt": 1779396399036
+  },
+  {
+    "prompt": "session-end",
+    "keywords": [
+      "end",
+      "session"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779396441735,
+    "resolvedAt": 1779398968904
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779398838383,
+    "resolvedAt": 1779398940306
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779398846112,
+    "resolvedAt": 1779398936813
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779398968900,
+    "resolvedAt": 1779398968943
+  },
+  {
+    "prompt": "post-task",
+    "keywords": [
+      "post",
+      "task"
+    ],
+    "agent": "coder",
+    "outcome": "success",
+    "timestamp": 1779398970768,
+    "resolvedAt": 1779398970805
+  },
+  {
+    "prompt": "notify",
+    "keywords": [
+      "notify"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779399036862
+  },
+  {
+    "prompt": "route",
+    "keywords": [
+      "route"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779399069126
+  },
+  {
+    "prompt": "/ship mobile fixes",
+    "keywords": [
+      "fixes",
+      "mobile",
+      "ship"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779399069192
+  },
+  {
+    "prompt": "pre-bash",
+    "keywords": [
+      "bash",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779399097388,
+    "resolvedAt": 1779399332688
+  },
+  {
+    "prompt": "post-bash",
+    "keywords": [
+      "bash",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779399100249,
+    "resolvedAt": 1779399325223
+  },
+  {
+    "prompt": "pre-edit",
+    "keywords": [
+      "edit",
+      "pre"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779399145023,
+    "resolvedAt": 1779399214420
+  },
+  {
+    "prompt": "post-edit",
+    "keywords": [
+      "edit",
+      "post"
+    ],
+    "agent": "coder",
+    "outcome": "pending",
+    "timestamp": 1779399145066,
+    "resolvedAt": 1779399214461
+  }
+]
