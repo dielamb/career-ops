@@ -58,20 +58,19 @@ export async function POST(req: Request) {
     const anthropic = new Anthropic({ apiKey: effectiveKey });
     const pdfBase64 = buffer.toString('base64');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const docBlock: any = {
+      type: 'document',
+      source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 },
+    };
+
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001', // cheap + fast for extraction only
       max_tokens: 4096,
       messages: [{
         role: 'user',
         content: [
-          {
-            type: 'document',
-            source: {
-              type: 'base64',
-              media_type: 'application/pdf',
-              data: pdfBase64,
-            },
-          } as Parameters<typeof anthropic.messages.create>[0]['messages'][0]['content'][0],
+          docBlock,
           {
             type: 'text',
             text: `Extract the full CV/resume text from this PDF.
