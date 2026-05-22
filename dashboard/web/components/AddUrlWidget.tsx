@@ -22,21 +22,19 @@ export function AddUrlWidget() {
     if (!isValidUrl(url) || pending) return;
     setPending(true);
     try {
-      const res = await fetch('/api/actions/add-url', {
+      const res = await fetch('/api/intake', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ url }),
       });
+      const body = await res.json().catch(() => ({})) as Record<string, unknown>;
       if (res.ok) {
-        showToast('Scan started (~1-2 min). Watch progress in Active Scans on /today.', 'success');
+        const score = typeof body.score === 'number' ? ` — score ${body.score}/5` : '';
+        const company = typeof body.company === 'string' ? ` (${body.company})` : '';
+        showToast(`Evaluated${company}${score}. Check /pipeline.`, 'success');
         setUrl('');
-        // Tell ActiveScans widget to refresh immediately instead of waiting for the next poll tick.
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('careerops:scan-started'));
-        }
       } else {
-        const body = await res.json().catch(() => ({}));
-        showToast((body as { error?: string }).error ?? 'Failed to add URL', 'error');
+        showToast((body as { error?: string }).error ?? 'Failed to evaluate URL', 'error');
       }
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Network error', 'error');
