@@ -34,7 +34,11 @@ export function ActiveScans() {
       if (!res.ok) return;
       const data = await res.json() as ScanStatusResponse;
       setScanStatus(data);
-      if (data.done) setScanLogPath(null);
+      if (data.done) {
+        setScanLogPath(null);
+        // Sync pipeline.md → Supabase so new offers appear in the dashboard
+        fetch('/api/pipeline/sync', { method: 'POST' }).catch(() => null);
+      }
     } catch { /* ignore */ }
   }, []);
 

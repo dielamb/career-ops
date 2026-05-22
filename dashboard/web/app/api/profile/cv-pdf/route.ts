@@ -41,16 +41,13 @@ export async function POST(req: Request) {
     return jsonError(400, 'PDF too large (max 5 MB)');
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return jsonError(500, 'ANTHROPIC_API_KEY not configured');
-
-  // Get user's own API key if set (falls back to server key)
+  // Prefer user's own key; fall back to server key
   const { data: profile } = await supabase
     .from('profiles')
     .select('anthropic_api_key_encrypted')
     .eq('user_id', user.id)
     .single();
-  const effectiveKey = profile?.anthropic_api_key_encrypted ?? apiKey;
+  const effectiveKey = profile?.anthropic_api_key_encrypted ?? process.env.ANTHROPIC_API_KEY;
 
   // Extract text: try Claude first (handles multi-column), fall back to pdf-parse
   let cvText: string;

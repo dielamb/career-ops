@@ -30,8 +30,9 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute = pathname.startsWith('/auth');
+  const isWebhook = pathname.startsWith('/api/billing/webhook');
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isAuthRoute && !isWebhook) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth';
     return NextResponse.redirect(url);

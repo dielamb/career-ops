@@ -50,15 +50,15 @@ function deriveTopFive(pipeline: PipelineEntry[]): PipelineEntry[] {
 }
 
 export function TodayHero({ applications, pipeline, parseErrors, today, onOpenTopFive, afterMetrics }: TodayHeroProps) {
-  // Progress stats: Applied / Responded / Interview / Total-Remaining
-  const applied   = applications.filter((a) => a.status === 'Applied').length;
-  const responded = applications.filter((a) => a.status === 'Responded' || a.status === 'Interview' || a.status === 'Offer').length;
-  const interview = applications.filter((a) => a.status === 'Interview' || a.status === 'Offer').length;
-  const total = applications.filter((a) => a.status !== 'SKIP' && a.status !== 'Discarded').length;
+  // Progress stats derived from pipeline (Supabase-backed, always populated)
+  const evaluated = pipeline.filter((p) => p.state === 'evaluated').length;
+  const pending   = pipeline.filter((p) => p.state === 'pending').length;
+  const skipped   = pipeline.filter((p) => p.state === 'skipped').length;
+  const total     = pipeline.length;
   const stats = [
-    { label: 'Applied',   value: applied,   color: 'cyber'   as const },
-    { label: 'Responded', value: responded, color: 'acid'    as const },
-    { label: 'Interview', value: interview, color: 'magenta' as const },
+    { label: 'Evaluated', value: evaluated, color: 'cyber'   as const },
+    { label: 'Pending',   value: pending,   color: 'acid'    as const },
+    { label: 'Skipped',   value: skipped,   color: 'magenta' as const },
     { label: 'Total',     value: total,     color: 'ink'     as const },
   ];
 
