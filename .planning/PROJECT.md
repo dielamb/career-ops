@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Local Next.js web dashboard layered on top of career-ops AI job-search pipeline (santifer fork). Aggregates `data/applications.md` (81 rows), `data/pipeline.md` (111 pending), `reports/*.md` and `output/*.pdf` into a single interactive view with 3 screens (`/today`, `/pipeline`, listing modal). Single-user tool for Michał Maciejewski during active job search; doubles as portfolio piece visible during screen-share interviews.
+SaaS web dashboard for AI-powered job search, built on Next.js 15 + Supabase + Stripe. Multi-user product with free tier (5 evals/mo) and Pro tier ($12/mo). Core pipeline: paste job URL → AI evaluation → score + gap analysis → CV generation → application tracking. BYOK (Bring Your Own Key) unlocks unlimited evals on Pro. Y2K maximalist design. Deployable to Vercel as `career-ops.app`.
 
 ## Core Value
 
@@ -50,39 +50,45 @@ Local Next.js web dashboard layered on top of career-ops AI job-search pipeline 
 
 ## Context
 
-- **Forked repo**: santifer/career-ops, branch `fix/pdf-signature-and-filter`. `update-system.mjs` auto-pulls system layer; `dashboard/web/` lives entirely in user layer per `DATA_CONTRACT.md`.
-- **Single-user product**: only Michał uses this. No auth, no multi-tenant, no public deploy.
+- **Forked repo**: santifer/career-ops, branch `feat/settings-page`. `update-system.mjs` auto-pulls system layer; `dashboard/web/` lives entirely in user layer per `DATA_CONTRACT.md`.
+- **Multi-user SaaS**: auth via Supabase (email + Google OAuth). Row-level security. Deployed to Vercel.
 - **Existing artifacts to honor**:
   - `dashboard/main.go` + `dashboard/internal/` — Go TUI bubbletea, stays alongside (NOT replaced)
   - `dashboard/index.html` — santifer's static dashboard, untouched
-  - `~60 *.mjs` scripts (scan, merge, verify, followup-cadence, analyze-patterns, generate-pdf, etc.) — reused via `spawn-mjs.ts`
-- **MD/TSV as source of truth** — no database. Dashboard reads/writes MD files atomically with lockfile.
-- **Stack pre-decided** (from design doc + eng review): Next.js 15 + React 19 + TypeScript strict + Tailwind v4 + Framer Motion v12 + magic MCP (21st.dev). `proper-lockfile`, `zod`, `gray-matter`, `remark` for data layer.
+  - `~60 *.mjs` scripts — remain for local CLI workflows; cloud equivalents in Phase 2+
+- **Data layer**: Supabase Postgres. Schema in `supabase/migrations/`. NOT MD files.
+- **Billing**: Stripe free (5 evals/mo, Haiku) + Pro ($12/mo, 100 hosted Sonnet OR unlimited BYOK).
+- **BYOK**: Pro-only. Anthropic API key stored via Supabase Vault (pgsodium). Onboarding + Settings.
+- **Stack pre-decided**: Next.js 15 + React 19 + TypeScript strict + Tailwind v4 + Framer Motion v12. Stripe SDK. Supabase JS client.
 - **DESIGN.md locked** (Y2K maximalist, light cream + triple neon, Bricolage Grotesque display).
-- **Prior pipeline phases complete**: 7 office-hours decisions, 6 eng-review decisions, 3 design-consultation decisions. All artifacts in `~/.gstack/projects/santifer-career-ops/`.
+- **Prior planning artifacts**: CEO plan v2 + eng review in `~/.gstack/projects/santifer-career-ops/`.
 
 ## Constraints
 
-- **Tech stack**: Locked to Next.js 15 + React 19 + Tailwind v4 + Framer Motion v12 + magic MCP — no substitutions without explicit re-review.
+- **Tech stack**: Locked to Next.js 15 + React 19 + Tailwind v4 + Framer Motion v12 — no substitutions without explicit re-review.
 - **File layout**: `dashboard/web/` only — must not touch santifer system layer (`update-system.mjs`, `templates/`, `modes/`, etc.) per `DATA_CONTRACT.md`.
-- **Data contract**: MD/TSV remain source of truth; no SQLite/Postgres migration.
-- **Security**: `spawn` array form mandatory; URL validator rejects non-http(s); `proper-lockfile` mandatory on MD writes; no auto-submit of applications.
-- **Performance**: Single-user, 192 MD rows — performance is non-issue. No premature optimization.
-- **Distribution**: localhost-only (`npm run dev`). No production deploy, no CI/CD pipeline beyond `test-all.mjs --dashboard`.
+- **Data layer**: Supabase Postgres. MD/TSV are no longer source of truth for the web app. Local CLI scripts still use MD directly.
+- **Security**: Stripe webhook signature verification mandatory (`constructEvent(rawBody, sig, secret)`). Vault RPCs server-side only. `spawn` array form mandatory. No auto-submit.
+- **Billing**: eval gate uses atomic `UPDATE ... WHERE eval_count < limit RETURNING` (no TOCTOU race). Stripe `trial_period_days: 7` on checkout.
+- **Distribution**: Vercel deployment (`career-ops.app`). Stripe webhook registered at production URL.
 - **Update compatibility**: santifer `update-system.mjs check` must continue to pass — no edits to system-layer files.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Approach C (Hybrid) — 20 files, 3 screens + modal | Step 0 complexity gate triggered (33 files); reduced to deliver core value without dead weight | — Pending |
-| Y2K maximalist aesthetic | User pivoted from quiet-command-center after preview; portfolio-piece value + interview talking point; warm cream bg keeps daily-use anxiety low | — Pending |
-| Wrapper pattern (`components/raw/` + `components/`) | Magic MCP regenerates won't overwrite custom motion code | — Pending |
-| `child_process.spawn` array form (no shell) | URLs come from web scrapers; shell injection vector eliminated at source | — Pending |
-| `proper-lockfile` over optimistic lock | Server-side lock = standard; optimistic locking would push retry UI complexity to client | — Pending |
-| Zod + per-row error boundary on MD parsers | Single bad row must not crash whole dashboard; corrupt-row toast > 500 error | — Pending |
-| Vitest + Playwright (not Jest) | Next.js 15 native, ESM-first, 100x faster; Playwright already in gstack ecosystem | — Pending |
-| Skip `/stats` + `/follow-ups` screens | Dead-weight risk admitted in design doc; revisit only if dashboard becomes daily-driver and gap is real | — Pending |
+| Y2K maximalist aesthetic | Portfolio-piece value + interview talking point; warm cream bg keeps daily-use anxiety low | ACCEPTED |
+| Wrapper pattern (`components/raw/` + `components/`) | Magic MCP regenerates won't overwrite custom motion code | ACCEPTED |
+| Vitest + Playwright (not Jest) | Next.js 15 native, ESM-first; Playwright in gstack ecosystem | ACCEPTED |
+| Supabase over MD/TSV as data layer | SaaS requires multi-user, auth, RLS — MD files cannot support this | ACCEPTED 2026-05-22 |
+| Free tier: 5 evals/mo (not 10) | Faster conversion clock — user hits limit in first week of active search | ACCEPTED 2026-05-22 |
+| Pro tier: $12/mo (not $9) | 33% above $9 cluster; signals premium; still 3x cheaper than LinkedIn Premium | ACCEPTED 2026-05-22 |
+| BYOK: Pro-only, via Supabase Vault | Gates upgrade incentive; Vault (pgsodium) for secure key storage | ACCEPTED 2026-05-22 |
+| Atomic eval gate: `UPDATE...WHERE count<limit RETURNING` | Prevents TOCTOU race on concurrent requests; one DB call closes the window | ACCEPTED 2026-05-22 |
+| Stripe webhook: signature verify mandatory | `constructEvent()` required — unauthenticated webhook = free Pro exploit | ACCEPTED 2026-05-22 |
+| Optimistic `is_pro=true` on checkout redirect | Webhook fires after redirect — optimistic grant + idempotent webhook = standard Stripe pattern | ACCEPTED 2026-05-22 |
+| BYOK inline error (not toast) | User must connect error to key field; toast too generic for validation | ACCEPTED 2026-05-22 |
+| 7-day free trial at eval #5 | Removes "I don't know if it's worth $12" objection at peak urgency moment | ACCEPTED 2026-05-22 |
 
 ## Evolution
 
@@ -102,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-20 after initialization (auto mode from /gsd-new-project, synthesized from /office-hours + /plan-eng-review + /design-consultation outputs)*
+*Last updated: 2026-05-22 — SaaS architecture pivot after /plan-ceo-review + /plan-eng-review. CEO plan: `~/.gstack/projects/santifer-career-ops/ceo-plans/2026-05-22-pricing-model-v2.md`*
