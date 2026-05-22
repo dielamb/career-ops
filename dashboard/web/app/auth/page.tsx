@@ -8,6 +8,7 @@ import { fadeUp, pixelBootUp } from '@/lib/motion-presets';
 import { useToast } from '@/components/Toast';
 
 export default function AuthPage() {
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
@@ -29,6 +30,23 @@ export default function AuthPage() {
       }
       router.refresh(); // Required: re-render Server Components with new session before navigating
       router.push('/');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    setPending(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      showToast('Check your email to confirm your account.', 'success');
+      setMode('signin');
     } finally {
       setPending(false);
     }
@@ -163,10 +181,10 @@ export default function AuthPage() {
           >
             {/* Header bar — ink-inverted, bleeds to card edges */}
             <p className="font-mono text-[13px] font-bold tracking-[0.1em] uppercase bg-ink text-bg px-[12px] py-[7px] -mx-[28px] -mt-[28px] mb-6">
-              {'// sign in'}
+              {mode === 'signin' ? '// sign in' : '// sign up'}
             </p>
 
-            <form onSubmit={handleSignIn} noValidate>
+            <form onSubmit={mode === 'signin' ? handleSignIn : handleSignUp} noValidate>
 
               {/* Email field */}
               <motion.div
@@ -262,15 +280,16 @@ export default function AuthPage() {
 
             </form>
 
-            {/* Toggle sign up link */}
+            {/* Toggle sign up / sign in link */}
             <p className="mt-[18px] font-mono text-[10px] text-ink-dim text-center tracking-[0.04em]">
-              No account?{' '}
-              <a
-                href="/signup"
-                className="text-ink font-bold border-b-[2px] border-ink no-underline hover:bg-cyber hover:border-cyber focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyber focus-visible:ring-offset-1"
+              {mode === 'signin' ? 'No account?' : 'Have an account?'}{' '}
+              <button
+                type="button"
+                onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setEmail(''); setPassword(''); }}
+                className="text-ink font-bold border-b-[2px] border-ink bg-transparent cursor-pointer hover:bg-cyber hover:border-cyber focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyber focus-visible:ring-offset-1"
               >
-                {'// SIGN UP'}
-              </a>
+                {mode === 'signin' ? '// SIGN UP' : '// SIGN IN'}
+              </button>
             </p>
 
           </motion.div>
