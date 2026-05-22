@@ -26,7 +26,8 @@ export function SettingsForm({ initialCv, hasApiKey }: Props) {
       if (res.ok) {
         const extracted = body.cvText as string;
         setCv(extracted);
-        showToast(`PDF extracted (${String(body.charCount)} chars). Review and save.`, 'success');
+        const method = body.extractionMethod === 'pdf-parse' ? ' (pdf-parse fallback — layout may vary)' : '';
+        showToast(`PDF extracted: ${String(body.charCount)} chars${method}. Review and save.`, 'success');
       } else {
         showToast((body as { error?: string }).error ?? 'PDF upload failed', 'error');
       }

@@ -52,8 +52,10 @@ export async function POST(req: Request) {
     .single();
   const effectiveKey = profile?.anthropic_api_key_encrypted ?? apiKey;
 
-  // Extract text using Claude — handles multi-column CV layouts
+  // Extract text: try Claude first (handles multi-column), fall back to pdf-parse
   let cvText: string;
+  let extractionMethod = 'claude';
+
   try {
     const anthropic = new Anthropic({ apiKey: effectiveKey });
     const pdfBase64 = buffer.toString('base64');
@@ -65,7 +67,7 @@ export async function POST(req: Request) {
     };
 
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001', // cheap + fast for extraction only
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
       messages: [{
         role: 'user',
@@ -86,9 +88,18 @@ Do NOT add any text that isn't in the original PDF.`,
     const content = message.content[0];
     if (content.type !== 'text') throw new Error('Unexpected Claude response type');
     cvText = content.text.trim();
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown error';
-    return jsonError(500, `CV extraction failed: ${msg}`);
+  } catch {
+    // Claude unavailable (no credits, rate limit, etc.) — fall back to pdf-parse
+    extractionMethod = 'pdf-parse';
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
+      const result = await pdfParse(buffer);
+      cvText = result.text.trim();
+    } catch (fallbackErr) {
+      const msg = fallbackErr instanceof Error ? fallbackErr.message : 'Unknown error';
+      return jsonError(500, `CV extraction failed: ${msg}`);
+    }
   }
 
   if (!cvText) {
@@ -105,6 +116,9 @@ Do NOT add any text that isn't in the original PDF.`,
   return Response.json({
     cvText,
     charCount: cvText.length,
-    message: `CV extracted (${cvText.length} chars). Review and save.`,
+    extractionMethod,
+    message: extractionMethod === 'claude'
+      ? `CV extracted with Claude (${cvText.length} chars). Review and save.`
+      : `CV extracted with pdf-parse (${cvText.length} chars). Layout may be imperfect — review and save.`,
   }, { status: 200 });
 }
