@@ -1,44 +1,44 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/parse-pipeline', () => ({
-  parsePipeline: vi.fn(),
+vi.mock('@/lib/supabase-server', () => ({
+  createServerSupabase: vi.fn(),
 }));
 
 import { GET } from '@/app/api/pipeline/route';
-import { parsePipeline } from '@/lib/parse-pipeline';
+import { createServerSupabase } from '@/lib/supabase-server';
 
-const mockParse = parsePipeline as unknown as ReturnType<typeof vi.fn>;
+const mockCreateClient = createServerSupabase as unknown as ReturnType<typeof vi.fn>;
 
-const FIXTURE_ENTRY = {
-  state: 'evaluated' as const, num: 1,
+const FIXTURE_ROW = {
+  id: 'uuid-1', user_id: 'user-uuid', listing_id: null,
   url: 'https://example.com/job', company: 'Acme', title: 'SWE',
-  score: 4.2, pdf: true, note: null,
+  score: 4.2, dimension_scores: null, gap_analysis: null,
+  status: 'evaluated', pdf_path: null, notes: null, eval_date: null,
+  created_at: '2026-05-20T00:00:00Z', updated_at: '2026-05-20T00:00:00Z',
 };
 
-describe('GET /api/pipeline', () => {
-  beforeEach(() => { mockParse.mockReset(); });
+function makeClient(data: unknown[], error: null | { message: string } = null) {
+  return { from: () => ({ select: () => ({ order: () => Promise.resolve({ data: error ? null : data, error }) }) }) };
+}
 
-  it('returns 200 with parsed pipeline entries on happy path', async () => {
-    mockParse.mockResolvedValueOnce({ data: [FIXTURE_ENTRY], errors: [] });
+describe('GET /api/pipeline', () => {
+  beforeEach(() => { mockCreateClient.mockReset(); });
+
+  it('returns 200 with pipeline rows on happy path', async () => {
+    mockCreateClient.mockResolvedValueOnce(makeClient([FIXTURE_ROW]));
     const res = await GET();
     expect(res.status).toBe(200);
-    expect(res.headers.get('content-type')).toMatch(/application\/json/);
     const body = await res.json();
     expect(body.data).toHaveLength(1);
     expect(body.data[0].company).toBe('Acme');
     expect(body.errors).toEqual([]);
   });
 
-  it('passes through parser errors with 200 status (malformed-row passthrough)', async () => {
-    mockParse.mockResolvedValueOnce({
-      data: [FIXTURE_ENTRY],
-      errors: [{ row: 5, raw: '- [x] no-url', reason: 'Missing URL in pipeline entry' }],
-    });
+  it('returns 200 with empty array when no rows', async () => {
+    mockCreateClient.mockResolvedValueOnce(makeClient([]));
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.data).toHaveLength(1);
-    expect(body.errors).toHaveLength(1);
-    expect(body.errors[0].reason).toBe('Missing URL in pipeline entry');
+    expect(body.data).toEqual([]);
   });
 });
