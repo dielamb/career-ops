@@ -1,7 +1,8 @@
 // POST /api/profile/cv-pdf
-// Upload CV PDF → extract text with pdf-parse → store in profiles.cv_text
+// Upload CV PDF → Claude extracts text (handles multi-column layouts) → store in profiles.cv_text
 // Returns: { cvText, charCount }
 
+import Anthropic from '@anthropic-ai/sdk';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { jsonError } from '@/lib/api-helpers';
 
@@ -40,20 +41,59 @@ export async function POST(req: Request) {
     return jsonError(400, 'PDF too large (max 5 MB)');
   }
 
-  // Extract text using pdf-parse
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return jsonError(500, 'ANTHROPIC_API_KEY not configured');
+
+  // Get user's own API key if set (falls back to server key)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('anthropic_api_key_encrypted')
+    .eq('user_id', user.id)
+    .single();
+  const effectiveKey = profile?.anthropic_api_key_encrypted ?? apiKey;
+
+  // Extract text using Claude — handles multi-column CV layouts
   let cvText: string;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
-    const result = await pdfParse(buffer);
-    cvText = result.text.trim();
+    const anthropic = new Anthropic({ apiKey: effectiveKey });
+    const pdfBase64 = buffer.toString('base64');
+
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001', // cheap + fast for extraction only
+      max_tokens: 4096,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'document',
+            source: {
+              type: 'base64',
+              media_type: 'application/pdf',
+              data: pdfBase64,
+            },
+          } as Parameters<typeof anthropic.messages.create>[0]['messages'][0]['content'][0],
+          {
+            type: 'text',
+            text: `Extract the full CV/resume text from this PDF.
+Output plain text only — no JSON, no markdown headers, no commentary.
+Preserve: name, contact info, all work experience (company, title, dates, bullet points), education, skills sections.
+Handle multi-column layout correctly — read left column first, then right column.
+Do NOT add any text that isn't in the original PDF.`,
+          },
+        ],
+      }],
+    });
+
+    const content = message.content[0];
+    if (content.type !== 'text') throw new Error('Unexpected Claude response type');
+    cvText = content.text.trim();
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
-    return jsonError(500, `PDF extraction failed: ${msg}`);
+    return jsonError(500, `CV extraction failed: ${msg}`);
   }
 
   if (!cvText) {
-    return jsonError(422, 'PDF appears to be empty or image-only (no extractable text)');
+    return jsonError(422, 'No text extracted from PDF');
   }
 
   // Save to profiles
@@ -66,6 +106,6 @@ export async function POST(req: Request) {
   return Response.json({
     cvText,
     charCount: cvText.length,
-    message: `CV extracted (${cvText.length} chars). Saved to profile.`,
+    message: `CV extracted (${cvText.length} chars). Review and save.`,
   }, { status: 200 });
 }
