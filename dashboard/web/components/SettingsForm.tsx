@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useToast } from './Toast';
 
 interface Props {
@@ -13,6 +13,30 @@ export function SettingsForm({ initialCv, hasApiKey }: Props) {
   const [apiKey, setApiKey] = useState('');
   const [savingCv, setSavingCv] = useState(false);
   const [savingKey, setSavingKey] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadPdf = async (file: File) => {
+    setUploadingPdf(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/profile/cv-pdf', { method: 'POST', body: form });
+      const body = await res.json().catch(() => ({})) as Record<string, unknown>;
+      if (res.ok) {
+        const extracted = body.cvText as string;
+        setCv(extracted);
+        showToast(`PDF extracted (${String(body.charCount)} chars). Review and save.`, 'success');
+      } else {
+        showToast((body as { error?: string }).error ?? 'PDF upload failed', 'error');
+      }
+    } catch {
+      showToast('Network error', 'error');
+    } finally {
+      setUploadingPdf(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const save = async (payload: { cvText?: string; apiKey?: string }, label: string,
     setSaving: (v: boolean) => void) => {
@@ -43,8 +67,28 @@ export function SettingsForm({ initialCv, hasApiKey }: Props) {
       <section className="flex flex-col gap-md">
         <h2 className="font-mono text-xs uppercase tracking-wider text-ink">// CV (used for job scoring)</h2>
         <p className="font-body text-sm text-ink-muted">
-          Paste your CV in plain text or Markdown. Claude uses this to score job fit.
+          Upload a PDF or paste plain text / Markdown. Claude uses this to score job fit.
         </p>
+
+        {/* PDF upload */}
+        <div className="flex items-center gap-sm">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPdf(f); }}
+            className="hidden"
+            id="cv-pdf-input"
+          />
+          <label
+            htmlFor="cv-pdf-input"
+            className={`inline-block cursor-pointer bg-acid text-ink border-[2px] border-ink shadow-[2px_2px_0_var(--color-ink)] font-mono text-xs uppercase tracking-wider px-md py-sm rounded-none ${uploadingPdf ? 'opacity-50 pointer-events-none' : 'hover:bg-cyber'}`}
+          >
+            {uploadingPdf ? '[Extracting…]' : '[Upload PDF]'}
+          </label>
+          <span className="font-mono text-xs text-ink-muted">max 5 MB · text-based PDF only</span>
+        </div>
+
         <textarea
           value={cv}
           onChange={(e) => setCv(e.target.value)}
