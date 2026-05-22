@@ -1,19 +1,24 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-import { repoRoot } from '@/lib/api-paths';
+import { createServerSupabase } from '@/lib/supabase-server';
+import { SettingsForm } from '@/components/SettingsForm';
 
-async function loadFile(rel: string): Promise<string | null> {
-  try {
-    return await readFile(path.join(repoRoot(), rel), 'utf-8');
-  } catch {
-    return null;
-  }
-}
+export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
-  const profile = await loadFile('config/profile.yml');
-  const design = await loadFile('DESIGN.md');
-  const dataContract = await loadFile('DATA_CONTRACT.md');
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let cvText = '';
+  let hasApiKey = false;
+
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('cv_text, anthropic_api_key_encrypted')
+      .eq('user_id', user.id)
+      .single();
+    cvText = data?.cv_text ?? '';
+    hasApiKey = !!data?.anthropic_api_key_encrypted;
+  }
 
   return (
     <div className="flex flex-col gap-2xl">
@@ -25,30 +30,11 @@ export default async function SettingsPage() {
           Settings.
         </h1>
         <p className="font-mono text-xs uppercase tracking-wider text-ink-muted mt-2">
-          // read-only view of user config + design system
+          // profile · CV · API key
         </p>
       </header>
 
-      <section className="flex flex-col gap-md">
-        <h2 className="font-mono text-xs uppercase tracking-wider text-ink">// config/profile.yml</h2>
-        <pre className="bg-paper border-[2.5px] border-ink shadow-[4px_4px_0_var(--color-ink)] rounded-none p-md font-mono text-sm text-ink whitespace-pre-wrap break-words leading-relaxed">
-          {profile ?? '(file not found)'}
-        </pre>
-      </section>
-
-      <section className="flex flex-col gap-md">
-        <h2 className="font-mono text-xs uppercase tracking-wider text-ink">// DESIGN.md (Y2K tokens)</h2>
-        <pre className="bg-paper border-[2.5px] border-ink shadow-[4px_4px_0_var(--color-ink)] rounded-none p-md font-mono text-sm text-ink whitespace-pre-wrap break-words leading-relaxed max-h-96 overflow-auto">
-          {design ?? '(file not found)'}
-        </pre>
-      </section>
-
-      <section className="flex flex-col gap-md">
-        <h2 className="font-mono text-xs uppercase tracking-wider text-ink">// DATA_CONTRACT.md</h2>
-        <pre className="bg-paper border-[2.5px] border-ink shadow-[4px_4px_0_var(--color-ink)] rounded-none p-md font-mono text-sm text-ink whitespace-pre-wrap break-words leading-relaxed max-h-96 overflow-auto">
-          {dataContract ?? '(file not found)'}
-        </pre>
-      </section>
+      <SettingsForm initialCv={cvText} hasApiKey={hasApiKey} />
     </div>
   );
 }
