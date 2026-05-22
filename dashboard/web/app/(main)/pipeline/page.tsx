@@ -1,59 +1,82 @@
-import { parsePipeline } from '@/lib/parse-pipeline';
-import { parseApplications } from '@/lib/parse-applications';
-import { parseScanHistoryByUrl } from '@/lib/parse-scan-history';
-import { pipelinePath, applicationsPath, scanHistoryPath } from '@/lib/api-paths';
+import { createServerSupabase } from '@/lib/supabase-server';
 import { PipelineTable } from '@/components/PipelineTable';
-import type { ParseError, Application, EnrichedPipelineEntry } from '@/lib/schemas';
+import type { EnrichedPipelineEntry } from '@/lib/schemas';
+import type { PipelineStatus } from '@/lib/database.types';
 
 export const dynamic = 'force-dynamic';
 
+const STATUS_TO_APP_STATUS: Partial<Record<PipelineStatus, Exclude<import('@/lib/schemas').Application['status'], 'SKIP'>>> = {
+  applied:    'Applied',
+  responded:  'Responded',
+  interview:  'Interview',
+  offer:      'Offer',
+  rejected:   'Rejected',
+};
+
 export default async function PipelinePage() {
-  const [pipelineResult, applicationsResult, scanHistory] = await Promise.all([
-    parsePipeline(pipelinePath()),
-    parseApplications(applicationsPath()),
-    parseScanHistoryByUrl(scanHistoryPath()),
+  const supabase = await createServerSupabase();
+
+  const [{ data: pipelineRows }, { data: appRows }] = await Promise.all([
+    supabase
+      .from('pipeline')
+      .select('*')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('applications')
+      .select('*')
+      .order('created_at', { ascending: false }),
   ]);
 
-  const parseErrors: ParseError[] = pipelineResult.errors;
+  // Map Supabase pipeline rows → EnrichedPipelineEntry (existing frontend interface)
+  const rows: EnrichedPipelineEntry[] = (pipelineRows ?? []).map((row) => ({
+    state:    (row.status === 'evaluated' ? 'evaluated'
+             : row.status === 'skipped'   ? 'skipped'
+             : row.status === 'error'     ? 'error'
+             :                              'pending') as EnrichedPipelineEntry['state'],
+    num:      null,
+    url:      row.url ?? '',
+    company:  row.company ?? null,
+    title:    row.title ?? null,
+    score:    row.score ?? null,
+    pdf:      row.pdf_path != null,
+    note:     row.notes ?? null,
+    evalDate: row.eval_date ?? null,
+    appNotes: null,
+    firstSeen: null,
+    // Supabase-native fields (extras, not in EnrichedPipelineEntry but safe to spread)
+    id:       row.id,
+    dbStatus: row.status,
+    dimensionScores: row.dimension_scores,
+    gapAnalysis: row.gap_analysis,
+  }));
 
-  // num → application (for status, notes, date)
-  const appByNum = new Map<number, Application>();
-  for (const app of applicationsResult.data) appByNum.set(app.num, app);
-
-  // num → application status for the dropdown (exclude SKIP)
-  const appStatusByNum = new Map<number, Exclude<Application['status'], 'SKIP'>>();
-  for (const app of applicationsResult.data) {
-    if (app.status !== 'SKIP') appStatusByNum.set(app.num, app.status);
+  // Map pipeline id → app status for dropdown
+  const appStatusByPipelineId = new Map<string, Exclude<import('@/lib/schemas').Application['status'], 'SKIP'>>();
+  for (const app of (appRows ?? [])) {
+    if (app.pipeline_id) {
+      const mapped = STATUS_TO_APP_STATUS[app.pipeline_id as PipelineStatus];
+      if (mapped) appStatusByPipelineId.set(app.pipeline_id, mapped);
+    }
   }
 
-  // Enrich pipeline rows with cross-source data
-  const rows: EnrichedPipelineEntry[] = pipelineResult.data.map((entry) => {
-    const app = entry.num != null ? appByNum.get(entry.num) : undefined;
-    return {
-      ...entry,
-      evalDate:  app?.date ?? null,
-      appNotes:  app?.notes ?? null,
-      firstSeen: scanHistory.get(entry.url) ?? null,
-    };
-  });
+  // Legacy compatibility: keyed by num (null for all Supabase rows) → empty map
+  const appStatusByNum: Record<number, Exclude<import('@/lib/schemas').Application['status'], 'SKIP'>> = {};
 
   return (
     <div className="flex flex-col gap-lg">
-      {parseErrors.length > 0 && (
-        <div
-          role="alert"
-          data-testid="pipeline-parse-errors-banner"
-          className="bg-magenta-soft border-[2.5px] border-magenta p-md rounded-none"
-        >
-          <p className="font-mono text-xs uppercase tracking-wider text-ink mb-xs">
-            // {parseErrors.length} pipeline parse {parseErrors.length === 1 ? 'error' : 'errors'} skipped
+      {rows.length === 0 && (
+        <div className="border-[2.5px] border-chrome p-xl rounded-none text-center">
+          <p className="font-mono text-xs uppercase tracking-wider text-ink-muted mb-xs">
+            // pipeline empty
           </p>
           <p className="font-body text-sm text-ink-soft">
-            Table rendered with valid rows only. Check data/pipeline.md.
+            Add job URLs via the sidebar to start evaluating.
           </p>
         </div>
       )}
-      <PipelineTable rows={rows} appStatusByNum={Object.fromEntries(appStatusByNum)} />
+      {rows.length > 0 && (
+        <PipelineTable rows={rows} appStatusByNum={appStatusByNum} />
+      )}
     </div>
   );
 }

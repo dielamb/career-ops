@@ -1,11 +1,15 @@
-import { parseApplications } from '@/lib/parse-applications';
-import { applicationsPath } from '@/lib/api-paths';
+import { createServerSupabase } from '@/lib/supabase-server';
 import { jsonOk } from '@/lib/api-helpers';
 
-/** Force dynamic — file content can change between requests. */
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const result = await parseApplications(applicationsPath());
-  return jsonOk(result);
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from('applications')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return jsonOk({ data: data ?? [], errors: [] });
 }
