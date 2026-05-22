@@ -27,8 +27,8 @@ export default function AuthPage() {
         showToast(error.message, 'error');
         return;
       }
+      router.refresh(); // Required: re-render Server Components with new session before navigating
       router.push('/');
-      router.refresh(); // Required: forces Server Components to re-render with new session
     } finally {
       setPending(false);
     }
@@ -36,12 +36,13 @@ export default function AuthPage() {
 
   async function handleGoogleOAuth() {
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+    if (error) showToast(error.message, 'error');
   }
 
   return (
