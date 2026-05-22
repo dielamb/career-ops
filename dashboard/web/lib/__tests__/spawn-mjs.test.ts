@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { EventEmitter } from 'events';
 import { openInBrowse, spawnMjs, InvalidUrlError } from '../spawn-mjs';
 
 afterEach(() => {

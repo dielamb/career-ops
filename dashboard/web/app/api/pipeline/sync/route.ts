@@ -45,7 +45,7 @@ export async function POST() {
             : e.state === 'error'     ? 'error'
             :                           'pending',
       notes: e.note ?? null,
-      eval_date: e.evalDate ?? null,
+      eval_date: null,
     }));
 
   if (!toInsert.length) return jsonOk({ synced: 0 });
