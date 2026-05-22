@@ -31,8 +31,13 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAuthRoute = pathname.startsWith('/auth');
   const isWebhook = pathname.startsWith('/api/billing/webhook');
+  const isApiRoute = pathname.startsWith('/api/');
 
   if (!user && !isAuthRoute && !isWebhook) {
+    // API routes: return 401 JSON (not HTML redirect — clients expect JSON)
+    if (isApiRoute) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = '/auth';
     return NextResponse.redirect(url);
