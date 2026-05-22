@@ -151,6 +151,9 @@ export interface Database {
           cv_text: string | null;
           scoring_prefs: Json;
           anthropic_api_key_encrypted: string | null;
+          stripe_customer_id: string | null;
+          is_pro: boolean;
+          pro_until: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -159,6 +162,9 @@ export interface Database {
           cv_text?: string | null;
           scoring_prefs?: Json;
           anthropic_api_key_encrypted?: string | null;
+          stripe_customer_id?: string | null;
+          is_pro?: boolean;
+          pro_until?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -167,6 +173,9 @@ export interface Database {
           cv_text?: string | null;
           scoring_prefs?: Json;
           anthropic_api_key_encrypted?: string | null;
+          stripe_customer_id?: string | null;
+          is_pro?: boolean;
+          pro_until?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -193,7 +202,12 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      increment_eval_count: {
+        Args: { p_user_id: string; p_limit: number };
+        Returns: number | null;
+      };
+    };
     Enums: {
       pipeline_status: PipelineStatus;
     };

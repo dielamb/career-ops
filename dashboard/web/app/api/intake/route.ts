@@ -75,27 +75,59 @@ export async function POST(req: Request) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('cv_text')
+    .select('cv_text, anthropic_api_key_encrypted, is_pro')
     .eq('user_id', user.id)
     .single();
 
   const cvText = profile?.cv_text?.trim() ?? '';
   if (!cvText) return jsonError(400, 'No CV found. Add your CV in Settings first.');
 
-  // 4. Check usage limit (free tier: 10 evals/month)
-  const { data: usage } = await supabase
-    .from('usage_counters')
-    .select('eval_count, month_start')
-    .eq('user_id', user.id)
-    .single();
+  // 4. Determine eval limit based on plan + BYOK
+  const hasApiKey = !!profile?.anthropic_api_key_encrypted?.trim();
+  const isPro = !!profile?.is_pro;
+
+  // BYOK is unlimited. Free = 5/mo. Pro hosted (no key) = 100/mo.
+  const limit = hasApiKey ? Infinity : (isPro ? 100 : 5);
+
+  // Atomic gate — single RPC call, no read-then-update race.
+  // Skip the gate entirely for BYOK users (they pay for their own usage).
+  let currentCount = 0;
+  if (!hasApiKey) {
+    const { data: newCount, error: rpcErr } = await supabase.rpc('increment_eval_count', { p_user_id: user.id, p_limit: Number.isFinite(limit) ? limit : 2147483647 });
+
+    if (rpcErr) {
+      return jsonError(500, `Failed to check eval limit: ${rpcErr.message}`);
+    }
+
+    if (newCount === null) {
+      // Row exists at limit; fetch the current count for the response body.
+      const { data: usage } = await supabase
+        .from('usage_counters')
+        .select('eval_count')
+        .eq('user_id', user.id)
+        .single();
+      const count = usage?.eval_count ?? limit;
+
+      if (!isPro) {
+        return Response.json({
+          error: 'Free tier limit reached (5 evaluations/month). Upgrade to Pro.',
+          upgradeRequired: true,
+          count,
+          limit: 5,
+        }, { status: 429 });
+      }
+      return Response.json({
+        error: 'Hosted limit reached (100 evaluations/month). Add your own Anthropic API key in Settings for unlimited evals.',
+        upgradeRequired: false,
+        count,
+        limit: 100,
+      }, { status: 429 });
+    }
+
+    currentCount = newCount;
+  }
 
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const currentCount = usage?.month_start === monthStart ? (usage.eval_count ?? 0) : 0;
-
-  if (currentCount >= 10) {
-    return jsonError(429, 'Free tier limit reached (10 evaluations/month). Upgrade to Pro.');
-  }
 
   // 5. Fetch JD from ATS (or use manual paste)
   let jd: Awaited<ReturnType<typeof fetchJobDescription>> | null = null;
@@ -116,11 +148,11 @@ export async function POST(req: Request) {
     return jsonError(422, jdFetchError ?? 'Could not fetch job description. Paste the text manually.');
   }
 
-  // 6. Score with Claude API
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return jsonError(500, 'ANTHROPIC_API_KEY not configured on server');
+  // 6. Score with Claude API — prefer user's own key, fall back to server key
+  const effectiveKey = profile?.anthropic_api_key_encrypted ?? process.env.ANTHROPIC_API_KEY;
+  if (!effectiveKey) return jsonError(500, 'No API key available. Add your Anthropic API key in Settings.');
 
-  const anthropic = new Anthropic({ apiKey });
+  const anthropic = new Anthropic({ apiKey: effectiveKey });
 
   let scoreResult: {
     title: string;
@@ -185,15 +217,6 @@ export async function POST(req: Request) {
 
   if (pipeErr) return jsonError(500, `Failed to save pipeline entry: ${pipeErr.message}`);
 
-  // 8. Increment usage counter
-  await supabase
-    .from('usage_counters')
-    .upsert({
-      user_id: user.id,
-      month_start: monthStart,
-      eval_count: currentCount + 1,
-    });
-
   return Response.json({
     pipelineId: pipelineRow.id,
     listingId: listing.id,
@@ -203,6 +226,6 @@ export async function POST(req: Request) {
     summary: scoreResult.summary,
     recommendation: scoreResult.recommendation,
     dimensions: scoreResult.dimensions,
-    evalsRemaining: 10 - (currentCount + 1),
+    evalsRemaining: hasApiKey ? null : Math.max(0, limit - currentCount),
   }, { status: 201 });
 }
