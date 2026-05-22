@@ -43,8 +43,8 @@ export async function POST(req: Request) {
   // Extract text using pdf-parse
   let cvText: string;
   try {
-    // Dynamic import to avoid Next.js edge runtime issues
-    const pdfParse = (await import('pdf-parse')).default;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
     const result = await pdfParse(buffer);
     cvText = result.text.trim();
   } catch (err) {
