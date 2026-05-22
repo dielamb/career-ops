@@ -1,125 +1,118 @@
 ---
 phase: 05-pages-e2e
 plan: "02"
-subsystem: pages
-tags: [pages, pipeline, modal, table, filters, framer-motion, y2k]
+subsystem: dashboard/web
+tags: [e2e, playwright, billing, vercel, deploy]
 dependency_graph:
-  requires:
-    - 05-01 (Sidebar + /today landing page, layout shell)
-    - 04-02 (StatusBadge, ScoreBar, ListingCard, ProgressMeter raw + wrappers)
-    - 03-01 (GET /api/listing/[id], GET /api/pipeline)
-    - 03-02 (POST /api/actions/apply, POST /api/actions/mark-sent)
-  provides:
-    - PipelineTable raw + client wrapper (filter chips, search, sort, row click)
-    - ListingModal raw + client wrapper (MD pane + PDF iframe + action bar)
-    - /pipeline server page (parsePipeline direct invocation)
-    - /api/file PDF passthrough route (path-traversal guarded)
-  affects:
-    - /pipeline route (new page)
-    - ListingModal opens from row click anywhere PipelineTable is mounted
-    - Phase 5 E2E tests (05-03) — /pipeline + modal now testable
+  requires: [04-billing-02]
+  provides: [e2e-billing-upgrade-spec, e2e-billing-page-spec, vercel-deploy-config]
+  affects: [dashboard/web/e2e/, vercel.json, dashboard/web/.env.local.example]
 tech_stack:
   added: []
-  patterns:
-    - raw/ server-safe + client wrapper split (same pattern as 04-02 + 05-01)
-    - LayoutGroup + layout prop for Framer Motion v12 list reorder animations
-    - empty-set-means-no-constraint filter UX (empty Set = all rows visible)
-    - direct parser invocation in server component (no SSR self-fetch loop)
-    - cancellable useEffect fetch via cancelled flag
-    - 423 Locked surfaces as inline "Locked, try again" (modal stays open)
-    - path-traversal guarded /api/file route for PDF serving
+  patterns: [playwright-page-route-mock, ssr-redirect-accept-pattern]
 key_files:
   created:
-    - dashboard/web/components/raw/PipelineTable.tsx
-    - dashboard/web/components/PipelineTable.tsx
-    - dashboard/web/components/raw/ListingModal.tsx
-    - dashboard/web/components/ListingModal.tsx
-    - dashboard/web/app/pipeline/page.tsx
-    - dashboard/web/app/api/file/route.ts
-  modified: []
+    - dashboard/web/e2e/billing-upgrade.spec.ts
+    - dashboard/web/e2e/billing-page-display.spec.ts
+    - vercel.json
+  modified:
+    - dashboard/web/.env.local.example
 decisions:
-  - "filter empty-set = no constraint: toggling no chips means all rows visible. Avoids zero-rows footgun when user hasn't selected anything."
-  - "LayoutGroup wraps table wrapper: Framer Motion v12 layout animations on the div; chips and row reordering spring with layoutSpring config (400/30)"
-  - "/api/file included: pdfPath from /api/listing/[id] is an absolute filesystem path; iframe can't load file:// URLs. Minimal /api/file route (traversal-safe, PDF-only) is the minimum needed for PAG-03 PDF iframe. Fallback: pdfHref=null shows 'PDF unavailable' pane gracefully."
-  - "modal state owned by PipelineTable client wrapper: keeps table/modal coupling tight without a global store; selectedId drives conditional render"
-  - "cancellable fetch in ListingModal useEffect: cancelled flag prevents setState on unmounted component when id changes rapidly"
+  - "No rootDirectory key in vercel.json — Vercel rejects it in config files; buildCommand/outputDirectory used instead; user sets Root Directory to '.' in Vercel UI"
+  - "billing-upgrade spec uses OR-combined locator (upgrade text | billing link | limit text) to stay implementation-agnostic"
+  - "billing-page-display spec accepts /auth/login redirect as valid pass — avoids login fixture complexity while still proving the route and gate exist"
+  - "regions:fra1 (Frankfurt) — closest to Poland, predictable cold starts for a personal tool"
 metrics:
-  duration_minutes: 15
-  completed_date: "2026-05-20"
+  duration: "~10 minutes"
+  completed: "2026-05-22"
   tasks_completed: 3
-  tasks_total: 3
-  files_created: 6
-  files_modified: 0
+  files_changed: 4
+requirements_met: [TST-BILL-5, TST-BILL-6, SHIP-1]
 ---
 
-# Phase 05 Plan 02: /pipeline Page + ListingModal Summary
+# Phase 05 Plan 02: E2E Billing Specs + Vercel Deploy Config Summary
 
-**One-liner:** PipelineTable (filter chips state/source/score, search-as-you-type, score-desc sort, row click opens modal) + ListingModal (MD pane + PDF iframe + action bar wired to /api/actions/apply + /api/actions/mark-sent, 423 -> inline "Locked, try again") + /pipeline server page, build exits 0, 50/50 tests pass.
+**One-liner:** Two Playwright E2E specs covering billing upgrade affordance and free-tier copy, plus vercel.json and expanded .env.local.example for production deploy.
 
-## Tasks Completed
+## What Was Built
 
-| Task | Name | Commit | Files |
-|------|------|--------|-------|
-| 1 | PipelineTable raw + motion wrapper | e008279 | raw/PipelineTable.tsx, PipelineTable.tsx |
-| 2 | ListingModal raw + motion wrapper + /api/file | def9896 | raw/ListingModal.tsx, ListingModal.tsx, app/api/file/route.ts |
-| 3 | /pipeline server page | 5596d50 | app/pipeline/page.tsx |
+### Task 1 — billing-upgrade.spec.ts (commit e6bcae5)
 
-## Test Counts
+Playwright spec that mocks `GET /api/billing/status` to return a free-user-at-limit payload (`evalCount:5, limit:5, evalsRemaining:0`) and asserts that `/pipeline` shows at least one upgrade affordance. The locator combines four signals (`text=/limit reached/i`, `text=/upgrade/i`, `a[href="/billing"]`, `a[href*="/billing"]`) with OR semantics so the test is not pinned to a specific UI element.
 
-| Point | Test Files | Tests |
-|-------|------------|-------|
-| Baseline (05-01 complete) | 15 | 50 |
-| After this plan | 15 | 50 |
+**Current status:** The spec is created and syntactically valid. Whether it passes or fails depends on whether the pipeline page has a client-side billing gate component that fetches `/api/billing/status`. If the gate is purely SSR (not a client component making a fetch), `page.route` will not intercept it and the test will fail with "no upgrade affordance found" — this is the intended behavior (surfaces a UI gap, not a test bug).
 
-No new test files added in this plan (E2E tests come in 05-03). All 50 existing tests pass with no regression.
+**Known gap:** The billing gate affordance on `/pipeline` was not added in Phase 04. The spec will likely fail until a follow-up plan adds a client component that fetches `/api/billing/status` and renders an upgrade banner/CTA. This is a tracked gap, not a test defect.
+
+### Task 2 — billing-page-display.spec.ts (commit 1e0f645)
+
+Playwright spec for the `/billing` page. Since the page is a Server Component, `page.route` cannot mock its SSR data. The spec instead asserts static copy:
+- Positive: `/Free/`, `/\$0\/month/`, `/\/5 evaluations used this month/`
+- Negative regression guard: `/\/10 evaluations used this month/` must be absent
+
+Auth handling: if the unauthenticated layout redirects to `/auth/login`, the test accepts that as a pass (proves route + gate exist). This avoids needing a login fixture in CI while remaining deterministic.
+
+**Spec branch hit:** In a standard dev run without a logged-in session, the redirect branch (`/auth/login`) will be taken. Both branches are correct passes.
+
+### Task 3 — vercel.json + .env.local.example (commit d5b4bc5)
+
+**vercel.json** at repo root:
+- `framework: nextjs` — enables Vercel's Next.js optimization preset
+- `buildCommand/installCommand` run from `dashboard/web/` explicitly (no `rootDirectory` key — Vercel rejects that in vercel.json; it must be set in the UI)
+- `outputDirectory: dashboard/web/.next`
+- `regions: ["fra1"]` — Frankfurt for lowest latency from Poland
+
+**.env.local.example** expanded from 3 vars to 7:
+
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser + SSR client |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser + SSR client |
+| `SUPABASE_SERVICE_ROLE_KEY` | Webhook admin client (bypasses RLS) |
+| `ANTHROPIC_API_KEY` | Server-side fallback for hosted users |
+| `STRIPE_SECRET_KEY` | Checkout session creation, webhook verification |
+| `STRIPE_WEBHOOK_SECRET` | Webhook signature validation |
+| `STRIPE_PRO_PRICE_ID` | Checkout session price |
+
+Each variable has a `Source:` comment pointing to the exact dashboard tab where the value is found.
 
 ## Decisions Made
 
-1. **Filter empty-set = no constraint** — When no filter chip is active, the empty `Set` means "all rows visible". This is the conventional multi-select UX (avoids the "no chip selected = no rows" footgun). Matches the plan spec.
+1. **No `rootDirectory` in vercel.json** — The key is only settable in the Vercel project UI (Project Settings → Root Directory). Using `buildCommand`/`installCommand`/`outputDirectory` achieves the same routing without the rejected key. Manual step: set Root Directory to `.` in Vercel UI.
 
-2. **Modal state owned by PipelineTable wrapper** — `selectedId` lives in the `PipelineTable` client wrapper. When `selectedId !== null`, `<ListingModal id={selectedId} onClose=... />` renders inside the same `LayoutGroup`. No global store needed; coupling is tight and intentional.
+2. **OR-combined locator in billing-upgrade spec** — Using a CSS selector list (`,` joins) means any one of the four upgrade signals is sufficient. This lets the UI evolve without breaking the test.
 
-3. **/api/file included** — `pdfPath` from `/api/listing/[id]` is an absolute filesystem path. Browser `<iframe src="file:///abs/path">` is blocked by same-origin policy. The minimal `/api/file?path=...` route (traversal-safe, `.pdf` only, path must be under `outputDir()`) is the only way to serve the PDF. If `/api/file` were omitted, `pdfHref` would always be `null` and the right pane would show "PDF unavailable" — acceptable for a fallback but not ideal for PAG-03.
+3. **Auth redirect acceptance in billing-page spec** — The conditional URL check is the cleanest way to handle "no logged-in user in CI" without flake. The spec proves either: (a) the page renders correct copy, or (b) the auth gate exists and redirects.
 
-4. **Cancellable fetch pattern** — `ListingModal` `useEffect` sets a `cancelled` flag on cleanup. This prevents `setState` on an unmounted component when the user clicks a different row before the fetch resolves.
+4. **fra1 region** — Single region, Frankfurt, for a personal tool. Lowest cold-start variance for the primary user location.
 
-5. **LayoutGroup wraps table motion.div** — Framer Motion v12 `layout` prop on the outer `motion.div` combined with `LayoutGroup` enables spring-based reorder animations when filter chips toggle rows in/out. Uses `layoutSpring` config (stiffness 400, damping 30) from `motion-presets.ts`.
+## Vercel Deploy Next Steps (manual, out of scope)
 
-## DESIGN.md Token Coverage
+1. Push `feat/settings-page` branch to GitHub (or merge to main)
+2. Connect the repo to a new Vercel project
+3. In Vercel Project Settings → Root Directory: set to `.` (repo root)
+4. In Vercel Project Settings → Environment Variables: paste all 7 vars from `.env.local.example`
+5. Trigger first deploy (automatic on push, or via Vercel dashboard)
+6. After first deploy: register Stripe webhook endpoint at `https://<vercel-domain>/api/billing/webhook`
+   - Events to enable: `checkout.session.completed`, `customer.subscription.deleted`, `customer.subscription.updated`
+   - Copy the signing secret (`whsec_...`) back to `STRIPE_WEBHOOK_SECRET` in Vercel env vars
 
-| Component | Tokens Used |
-|-----------|------------|
-| raw/PipelineTable | `bg-paper`, `bg-ink`, `bg-cyber`, `bg-acid`, `text-ink`, `text-ink-muted`, `text-ink-soft`, `border-ink`, `border-ink-muted`, `font-display`, `font-mono`, `font-body`, `shadow-[6px_6px_0_var(--color-ink)]`, `accent-magenta` |
-| raw/ListingModal | `bg-paper`, `bg-cyber`, `bg-acid`, `text-ink`, `text-ink-muted`, `text-ink-soft`, `text-magenta`, `border-ink`, `border-ink-muted`, `font-display`, `font-mono`, `font-body`, `shadow-[6px_6px_0_var(--color-ink)]`, `shadow-[3px_3px_0_var(--color-ink)]` |
+## Known Limitation
+
+E2E tests do not validate the real Stripe payment flow end-to-end. The unit tests in Plan 05-01 cover the API-layer contract (webhook processing, checkout session creation). Live verification requires the deploy + Stripe test-mode trigger from the Stripe CLI or dashboard.
 
 ## Deviations from Plan
 
-None — plan executed exactly as written. The `/api/file` route was explicitly noted in the plan as an expected addition for PAG-03 PDF iframe support.
+None. Plan executed exactly as written. The billing-upgrade spec was created with the exact content specified in the plan's `<action>` block; the billing-page spec likewise. vercel.json and .env.local.example match the plan's content verbatim.
 
-## Known Stubs
+The plan already acknowledged that the billing-upgrade spec may fail if the pipeline page lacks a client-side billing gate — this is documented above under "Known gap" and is not a deviation.
 
-None. All data flows from real sources:
-- PipelineTable receives live `PipelineEntry[]` from `parsePipeline()` in the server component
-- ListingModal fetches live `Report` data from `/api/listing/[id]` on mount
-- Action bar calls real POST routes
+## Self-Check
 
-## Threat Flags
-
-| Flag | File | Description |
-|------|------|-------------|
-| threat_flag: file-read | dashboard/web/app/api/file/route.ts | New GET endpoint reads files from disk; guarded by realpath check against outputDir() + .pdf-only extension filter. Path traversal mitigated. |
+- [x] `dashboard/web/e2e/billing-upgrade.spec.ts` exists and contains `page.route('**/api/billing/status'`
+- [x] `dashboard/web/e2e/billing-page-display.spec.ts` exists and contains `page.goto('/billing')`
+- [x] `vercel.json` exists at repo root, valid JSON, contains `"framework": "nextjs"` and `dashboard/web`
+- [x] `dashboard/web/.env.local.example` contains all 7 required env vars
+- [x] Commits: e6bcae5, 1e0f645, d5b4bc5 all exist
 
 ## Self-Check: PASSED
-
-- [x] `dashboard/web/components/raw/PipelineTable.tsx` exists — no 'use client', filter chips, search, table rows, data-testid attrs
-- [x] `dashboard/web/components/PipelineTable.tsx` exists — 'use client', LayoutGroup, ListingModal conditional render
-- [x] `dashboard/web/components/raw/ListingModal.tsx` exists — no 'use client', modal-close, modal-action-open, modal-action-mark-applied, MD pane + PDF pane
-- [x] `dashboard/web/components/ListingModal.tsx` exists — 'use client', ESC handler, /api/listing/ fetch, /api/actions/apply, /api/actions/mark-sent, "Locked, try again"
-- [x] `dashboard/web/app/pipeline/page.tsx` exists — force-dynamic, parsePipeline(pipelinePath()), PipelineTable render
-- [x] `dashboard/web/app/api/file/route.ts` exists — path traversal guard, .pdf-only, outputDir() root check
-- [x] Commits e008279, def9896, 5596d50 all exist in git log
-- [x] 50/50 tests pass (npm run test:run)
-- [x] npm run build exits 0 (Route /pipeline compiled successfully)
-- [x] TypeScript strict: only pre-existing EventEmitter error in spawn-mjs.test.ts (unrelated to this plan)
-- [x] No hex literals in raw/ components
-- [x] No framer-motion imports in raw/ components
