@@ -14,10 +14,20 @@ export function ActiveScans() {
   const [logContent, setLogContent] = useState<string>('');
   const [logLoading, setLogLoading] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
+  // ActiveScans polls /api/scans/active + /api/file, both blocked for non-admin
+  // users. Skip the whole component until the per-user scan flow lands.
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   // Scan.mjs run progress
   const [scanLogPath, setScanLogPath] = useState<string | null>(null);
   const [scanStatus, setScanStatus] = useState<ScanStatusResponse | null>(null);
+
+  useEffect(() => {
+    fetch('/api/billing/status')
+      .then((r) => r.json())
+      .then((d: { isAdmin?: boolean }) => setIsAdmin(!!d.isAdmin))
+      .catch(() => setIsAdmin(false));
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -43,6 +53,7 @@ export function ActiveScans() {
   }, []);
 
   useEffect(() => {
+    if (!isAdmin) { setMounted(true); return; }
     setMounted(true);
     refresh();
     const id = setInterval(refresh, POLL_MS);
@@ -52,7 +63,7 @@ export function ActiveScans() {
       clearInterval(id);
       window.removeEventListener(SCAN_STARTED_EVENT, onScanStarted);
     };
-  }, [refresh]);
+  }, [refresh, isAdmin]);
 
   // Listen for scan.mjs run start
   useEffect(() => {
@@ -111,6 +122,7 @@ export function ActiveScans() {
   }, [openLogPath, handleCloseLog]);
 
   if (!mounted) return null;
+  if (isAdmin === false || isAdmin === null) return null;
 
   // Build scan progress node to inject into the raw widget
   const scanProgress = (scanStatus || scanLogPath) ? buildScanProgressNode(scanStatus) : undefined;

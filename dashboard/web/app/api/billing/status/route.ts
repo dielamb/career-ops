@@ -37,6 +37,13 @@ export async function GET() {
   const limit: number | null = hasApiKey ? null : (isPro ? 100 : 5);
   const evalsRemaining: number | null = limit === null ? null : Math.max(0, limit - evalCount);
 
+  // isAdmin gates UI affordances that still depend on the local filesystem
+  // (scan, reports, contact lookup, cover letter). Same env var that the
+  // middleware uses so they can't drift.
+  const adminEmails = (process.env.ADMIN_EMAILS ?? 'maciejkamichal@gmail.com')
+    .split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+  const isAdmin = !!user.email && adminEmails.includes(user.email.toLowerCase());
+
   return jsonOk({
     isPro,
     proUntil: profile?.pro_until ?? null,
@@ -44,5 +51,6 @@ export async function GET() {
     limit,
     hasApiKey,
     evalsRemaining,
+    isAdmin,
   });
 }

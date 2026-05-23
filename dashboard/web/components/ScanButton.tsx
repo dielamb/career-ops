@@ -5,11 +5,23 @@ import { useToast } from './Toast';
 /**
  * [Run Scan] button — POSTs /api/actions/scan, then polls /api/actions/scan/status
  * every 5s until done, showing toast notifications.
+ *
+ * Hidden for non-admin users: the scan worker still reads admin's portals.yml
+ * from the local filesystem, so triggering it from a non-admin session would
+ * just hit the middleware 403 (Beta feature — coming soon).
  */
 export function ScanButton() {
   const { showToast } = useToast();
   const [running, setRunning] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    fetch('/api/billing/status')
+      .then((r) => r.json())
+      .then((d: { isAdmin?: boolean }) => setIsAdmin(!!d.isAdmin))
+      .catch(() => setIsAdmin(false));
+  }, []);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current != null) {
@@ -62,6 +74,9 @@ export function ScanButton() {
       } catch { /* network blip — keep polling */ }
     }, 2000);
   }, [running, showToast, stopPolling]);
+
+  if (isAdmin === false) return null;
+  if (isAdmin === null) return null; // hide while loading to avoid flash
 
   return (
     <button
