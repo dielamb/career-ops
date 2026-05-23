@@ -8,6 +8,7 @@ import { createServerSupabase } from '@/lib/supabase-server';
 import { fetchJobDescription, AtsFetchError } from '@/lib/ats-fetch';
 import { validateUrl, InvalidUrlError } from '@/lib/spawn-mjs';
 import { jsonError } from '@/lib/api-helpers';
+import { canonicalUrl } from '@/lib/canonical-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,6 +73,37 @@ export async function POST(req: Request) {
   const supabase = await createServerSupabase();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return jsonError(401, 'Unauthorized');
+
+  // 3a. Dedup by canonical URL — return existing eval instead of double-charging
+  // a counter + Anthropic call when the user re-pastes the same posting.
+  const canonical = canonicalUrl(url);
+  const { data: userListings } = await supabase
+    .from('listings')
+    .select('id, url')
+    .eq('user_id', user.id);
+  const existingListing = userListings?.find((l) => canonicalUrl(l.url) === canonical);
+  if (existingListing) {
+    const { data: existingPipeline } = await supabase
+      .from('pipeline')
+      .select('id, score, company, title, notes, dimension_scores')
+      .eq('listing_id', existingListing.id)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existingPipeline) {
+      return Response.json({
+        duplicate: true,
+        pipelineId: existingPipeline.id,
+        listingId: existingListing.id,
+        score: existingPipeline.score,
+        title: existingPipeline.title,
+        company: existingPipeline.company,
+        summary: existingPipeline.notes,
+        dimensions: existingPipeline.dimension_scores,
+      }, { status: 200 });
+    }
+  }
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -182,12 +214,13 @@ export async function POST(req: Request) {
     return jsonError(500, `Claude scoring failed: ${msg}`);
   }
 
-  // 7. Save listing + pipeline to Supabase
+  // 7. Save listing + pipeline to Supabase. Store canonical URL so future
+  // dedup queries match regardless of tracking params on the input.
   const { data: listing, error: listingErr } = await supabase
     .from('listings')
     .insert({
       user_id: user.id,
-      url,
+      url: canonical,
       jd_text: jdText,
       company: jd?.company ?? scoreResult.company,
       title: jd?.title ?? scoreResult.title,
@@ -203,7 +236,7 @@ export async function POST(req: Request) {
     .insert({
       user_id: user.id,
       listing_id: listing.id,
-      url,
+      url: canonical,
       company: jd?.company ?? scoreResult.company,
       title: jd?.title ?? scoreResult.title,
       score: scoreResult.score,

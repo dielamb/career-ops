@@ -14,10 +14,17 @@ export function UsageMeter() {
   const [status, setStatus] = useState<BillingStatus | null>(null);
 
   useEffect(() => {
-    fetch('/api/billing/status')
-      .then((r) => r.json())
-      .then((d) => setStatus(d as BillingStatus))
-      .catch(() => null);
+    const refresh = () => {
+      fetch('/api/billing/status')
+        .then((r) => r.json())
+        .then((d) => setStatus(d as BillingStatus))
+        .catch(() => null);
+    };
+    refresh();
+    // AddUrlWidget dispatches this after a successful intake POST so the
+    // counter updates without a manual reload.
+    window.addEventListener('careerops:eval-completed', refresh);
+    return () => window.removeEventListener('careerops:eval-completed', refresh);
   }, []);
 
   if (!status) return null;

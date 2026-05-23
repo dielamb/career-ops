@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useToast } from './Toast';
 
 /**
@@ -8,6 +9,7 @@ import { useToast } from './Toast';
  */
 export function AddUrlWidget() {
   const { showToast } = useToast();
+  const router = useRouter();
   const [url, setUrl] = useState('');
   const [pending, setPending] = useState(false);
 
@@ -31,8 +33,18 @@ export function AddUrlWidget() {
       if (res.ok) {
         const score = typeof body.score === 'number' ? ` — score ${body.score}/5` : '';
         const company = typeof body.company === 'string' ? ` (${body.company})` : '';
-        showToast(`Evaluated${company}${score}. Check /pipeline.`, 'success');
+        const duplicate = body.duplicate === true;
+        showToast(
+          duplicate
+            ? `Already in pipeline${company}${score}.`
+            : `Evaluated${company}${score}. Check /pipeline.`,
+          'success',
+        );
         setUrl('');
+        // Refresh server components (e.g. /pipeline list) and notify UsageMeter
+        // so the eval counter updates without a manual page reload.
+        router.refresh();
+        window.dispatchEvent(new CustomEvent('careerops:eval-completed'));
       } else {
         showToast((body as { error?: string }).error ?? 'Failed to evaluate URL', 'error');
       }
