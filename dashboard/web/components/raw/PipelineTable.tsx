@@ -49,10 +49,9 @@ const STATE_COUNTS_LABEL: Record<EnrichedPipelineEntry['state'], string> = {
 };
 
 function deriveId(entry: EnrichedPipelineEntry): string | null {
-  // Legacy MD numeric id only. Supabase uuids skip the modal path until the
-  // per-user /api/pipeline/[id] endpoint lands in Phase 1, because the legacy
-  // /api/listing/[id] endpoint reads from the local filesystem and can't
-  // resolve uuids.
+  // Prefer Supabase row uuid (per-user, PipelineDetailModal handles it),
+  // fall back to legacy MD numeric id (admin-only ListingModal handles it).
+  if (entry.id != null) return entry.id;
   return entry.num != null ? String(entry.num) : null;
 }
 

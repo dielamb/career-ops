@@ -11,8 +11,11 @@ import {
   type SortDir,
 } from './raw/PipelineTable';
 import { ListingModal } from './ListingModal';
+import { PipelineDetailModal } from './PipelineDetailModal';
 import type { EnrichedPipelineEntry } from '@/lib/schemas';
 import { fadeUp } from '@/lib/motion-presets';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface PipelineTableClientProps {
   rows: EnrichedPipelineEntry[];
@@ -74,11 +77,12 @@ export function PipelineTable({ rows, appStatusByNum = {} }: PipelineTableClient
   };
 
   const handleRowClick = (a: PipelineRowAction) => {
-    if (a.entry.state === 'evaluated' && a.id != null) {
-      // Evaluated + has report → open in-dashboard modal
+    // Open in-dashboard modal whenever we have an id (uuid or legacy num).
+    // PipelineDetailModal handles Supabase uuids; ListingModal handles legacy
+    // numeric MD reports. Both detected below via UUID_RE.
+    if (a.id != null) {
       setSelectedId(a.id);
     } else {
-      // No report → open external JD in new tab
       window.open(a.entry.url, '_blank', 'noopener,noreferrer');
     }
   };
@@ -134,7 +138,9 @@ export function PipelineTable({ rows, appStatusByNum = {} }: PipelineTableClient
       </motion.div>
 
       {selectedId != null && (
-        <ListingModal id={selectedId} onClose={closeModal} />
+        UUID_RE.test(selectedId)
+          ? <PipelineDetailModal id={selectedId} onClose={closeModal} />
+          : <ListingModal id={selectedId} onClose={closeModal} />
       )}
     </LayoutGroup>
   );
