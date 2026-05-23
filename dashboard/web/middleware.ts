@@ -47,6 +47,11 @@ export async function middleware(request: NextRequest) {
   // admin's career-ops MD/PDF working dir) are gated to admin emails until
   // per-user data flow ships. Without this, every signed-in user sees the
   // admin's personal pipeline / reports / PDFs.
+  //
+  // NOTE: `/api/scan/run` is NOT on this list — it's the M1 per-user scan
+  // that reads from Supabase (RLS-scoped) and a read-only repo-root config,
+  // so any authenticated user can call it. The legacy `/api/actions/scan`
+  // (admin-only spawn of scan.mjs against local FS) stays gated below.
   const FS_BACKED_PREFIXES = [
     '/reports',
     '/api/file',

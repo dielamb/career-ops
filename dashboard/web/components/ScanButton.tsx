@@ -1,82 +1,54 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useToast } from './Toast';
 
 /**
- * [Run Scan] button — POSTs /api/actions/scan, then polls /api/actions/scan/status
- * every 5s until done, showing toast notifications.
+ * [Run Scan] button — POSTs /api/scan/run, the M1 per-user scan that hits
+ * Greenhouse/Ashby/Lever public APIs for every enabled company in
+ * portals.yml and inserts matching listings into the caller's Supabase rows.
  *
- * Hidden for non-admin users: the scan worker still reads admin's portals.yml
- * from the local filesystem, so triggering it from a non-admin session would
- * just hit the middleware 403 (Beta feature — coming soon).
+ * Visible to all authenticated users. Synchronous (no polling): the API
+ * returns a summary once done (typically <30s for ~50 companies).
  */
 export function ScanButton() {
+  const router = useRouter();
   const { showToast } = useToast();
   const [running, setRunning] = useState(false);
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    fetch('/api/billing/status')
-      .then((r) => r.json())
-      .then((d: { isAdmin?: boolean }) => setIsAdmin(!!d.isAdmin))
-      .catch(() => setIsAdmin(false));
-  }, []);
-
-  const stopPolling = useCallback(() => {
-    if (pollRef.current != null) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => () => stopPolling(), [stopPolling]);
 
   const startScan = useCallback(async () => {
     if (running) return;
     setRunning(true);
-
-    let logPath: string;
+    showToast('Scan started…', 'info');
     try {
-      const res = await fetch('/api/actions/scan', { method: 'POST' });
+      const res = await fetch('/api/scan/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        added?: number;
+        skipped_dup?: number;
+        errors?: string[];
+        error?: string;
+      };
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        showToast((body as { error?: string }).error ?? 'Scan failed to start', 'error');
-        setRunning(false);
+        showToast(data.error ?? 'Scan failed', 'error');
         return;
       }
-      const data = await res.json() as { logPath: string };
-      logPath = data.logPath;
-      showToast('Scan started (~1-2 min)', 'info');
-      window.dispatchEvent(new CustomEvent('careerops:scan-started', { detail: { logPath } }));
+      const added = data.added ?? 0;
+      showToast(
+        `Scan complete: ${added} new offer${added === 1 ? '' : 's'} added`,
+        'success',
+      );
+      router.refresh();
+      window.dispatchEvent(new CustomEvent('careerops:scan-done', { detail: data }));
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Network error', 'error');
+    } finally {
       setRunning(false);
-      return;
     }
-
-    // Poll every 2s for responsive progress display
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/actions/scan/status?logPath=${encodeURIComponent(logPath)}`);
-        if (!res.ok) return;
-        const data = await res.json() as { done: boolean; newOffers: number | null };
-        if (data.done) {
-          stopPolling();
-          setRunning(false);
-          window.dispatchEvent(new CustomEvent('careerops:scan-done', { detail: { logPath } }));
-          const count = data.newOffers;
-          showToast(
-            count != null ? `Scan complete: ${count} new offer${count !== 1 ? 's' : ''}` : 'Scan complete',
-            'success',
-          );
-        }
-      } catch { /* network blip — keep polling */ }
-    }, 2000);
-  }, [running, showToast, stopPolling]);
-
-  if (isAdmin === false) return null;
-  if (isAdmin === null) return null; // hide while loading to avoid flash
+  }, [running, router, showToast]);
 
   return (
     <button
