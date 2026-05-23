@@ -88,6 +88,20 @@ export async function POST(req: Request) {
     return jsonError(500, `Failed to load portals.yml: ${msg}`);
   }
 
+  // M3: merge per-user title_filter override into the global one. User
+  // keywords are additive — they extend, never replace, the curated default.
+  const { data: profileForFilter } = await supabase
+    .from('profiles')
+    .select('scoring_prefs')
+    .eq('user_id', user.id)
+    .single();
+  const userPrefs = (profileForFilter?.scoring_prefs ?? {}) as Record<string, unknown>;
+  const userFilter = (userPrefs.title_filter ?? {}) as { positive?: string[]; negative?: string[] };
+  const titleFilter = {
+    positive: [...portals.titleFilter.positive, ...(userFilter.positive ?? [])],
+    negative: [...portals.titleFilter.negative, ...(userFilter.negative ?? [])],
+  };
+
   // Subset filter (optional). Case-insensitive name match.
   let companies = portals.trackedCompanies;
   if (body.companies && body.companies.length > 0) {
@@ -147,7 +161,7 @@ export async function POST(req: Request) {
       return;
     }
     for (const job of jobs) {
-      if (!matchesTitle(job.title, portals.titleFilter)) {
+      if (!matchesTitle(job.title, titleFilter)) {
         result.skipped_filter++;
         continue;
       }
@@ -172,13 +186,30 @@ export async function POST(req: Request) {
   // on a unique-constraint race (concurrent scans), we surface it but don't
   // blow up the whole response.
   if (toInsert.length > 0) {
-    const { error: insertErr, count } = await supabase
+    const { data: inserted, error: insertErr } = await supabase
       .from('listings')
-      .insert(toInsert, { count: 'exact' });
+      .insert(toInsert)
+      .select('id, url, company, title');
     if (insertErr) {
-      result.errors.push(`insert failed: ${insertErr.message}`);
-    } else {
-      result.added = count ?? toInsert.length;
+      result.errors.push(`insert listings failed: ${insertErr.message}`);
+    } else if (inserted) {
+      result.added = inserted.length;
+
+      // M2: also seed pipeline rows so scanned listings show up in /pipeline
+      // as `pending` (no score yet). User can click row → modal → "Evaluate"
+      // to run the Anthropic scoring on demand.
+      const pipelineRows = inserted.map((l) => ({
+        user_id: user.id,
+        listing_id: l.id,
+        url: l.url,
+        company: l.company,
+        title: l.title,
+        status: 'pending' as const,
+      }));
+      const { error: pipeErr } = await supabase.from('pipeline').insert(pipelineRows);
+      if (pipeErr) {
+        result.errors.push(`insert pipeline failed: ${pipeErr.message}`);
+      }
     }
   }
 

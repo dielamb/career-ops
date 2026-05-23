@@ -82,16 +82,21 @@ export async function POST(req: Request) {
     .select('id, url')
     .eq('user_id', user.id);
   const existingListing = userListings?.find((l) => canonicalUrl(l.url) === canonical);
+  // If the same posting was already scored, short-circuit and return it.
+  // A pending pipeline row (status='pending', score=null) created by a prior
+  // /api/scan/run is NOT a duplicate — fall through and score it now,
+  // updating that row in place instead of inserting a second one.
+  let pendingPipelineId: string | null = null;
   if (existingListing) {
     const { data: existingPipeline } = await supabase
       .from('pipeline')
-      .select('id, score, company, title, notes, dimension_scores')
+      .select('id, status, score, company, title, notes, dimension_scores')
       .eq('listing_id', existingListing.id)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (existingPipeline) {
+    if (existingPipeline && existingPipeline.status !== 'pending' && existingPipeline.score != null) {
       return Response.json({
         duplicate: true,
         pipelineId: existingPipeline.id,
@@ -102,6 +107,9 @@ export async function POST(req: Request) {
         summary: existingPipeline.notes,
         dimensions: existingPipeline.dimension_scores,
       }, { status: 200 });
+    }
+    if (existingPipeline?.status === 'pending') {
+      pendingPipelineId = existingPipeline.id;
     }
   }
 
@@ -216,44 +224,73 @@ export async function POST(req: Request) {
 
   // 7. Save listing + pipeline to Supabase. Store canonical URL so future
   // dedup queries match regardless of tracking params on the input.
-  const { data: listing, error: listingErr } = await supabase
-    .from('listings')
-    .insert({
-      user_id: user.id,
-      url: canonical,
-      jd_text: jdText,
-      company: jd?.company ?? scoreResult.company,
-      title: jd?.title ?? scoreResult.title,
-      source: jd?.ats ?? 'manual',
-    })
-    .select('id')
-    .single();
+  // If a pending listing already exists from /api/scan/run, reuse its id
+  // so we update its pipeline row instead of inserting a second listing.
+  let listingId: string;
+  if (existingListing) {
+    listingId = existingListing.id;
+    // Backfill jd_text on the scan-created listing.
+    await supabase
+      .from('listings')
+      .update({ jd_text: jdText })
+      .eq('id', listingId)
+      .eq('user_id', user.id);
+  } else {
+    const { data: listing, error: listingErr } = await supabase
+      .from('listings')
+      .insert({
+        user_id: user.id,
+        url: canonical,
+        jd_text: jdText,
+        company: jd?.company ?? scoreResult.company,
+        title: jd?.title ?? scoreResult.title,
+        source: jd?.ats ?? 'manual',
+      })
+      .select('id')
+      .single();
+    if (listingErr) return jsonError(500, `Failed to save listing: ${listingErr.message}`);
+    listingId = listing.id;
+  }
 
-  if (listingErr) return jsonError(500, `Failed to save listing: ${listingErr.message}`);
+  const pipelineFields = {
+    user_id: user.id,
+    listing_id: listingId,
+    url: canonical,
+    company: jd?.company ?? scoreResult.company,
+    title: jd?.title ?? scoreResult.title,
+    score: scoreResult.score,
+    dimension_scores: scoreResult.dimensions,
+    gap_analysis: scoreResult.key_gaps.join('; '),
+    notes: scoreResult.summary,
+    status: 'evaluated',
+    eval_date: now.toISOString().slice(0, 10),
+  };
 
-  const { data: pipelineRow, error: pipeErr } = await supabase
-    .from('pipeline')
-    .insert({
-      user_id: user.id,
-      listing_id: listing.id,
-      url: canonical,
-      company: jd?.company ?? scoreResult.company,
-      title: jd?.title ?? scoreResult.title,
-      score: scoreResult.score,
-      dimension_scores: scoreResult.dimensions,
-      gap_analysis: scoreResult.key_gaps.join('; '),
-      notes: scoreResult.summary,
-      status: 'evaluated',
-      eval_date: now.toISOString().slice(0, 10),
-    })
-    .select('id')
-    .single();
-
-  if (pipeErr) return jsonError(500, `Failed to save pipeline entry: ${pipeErr.message}`);
+  let pipelineRow: { id: string };
+  if (pendingPipelineId) {
+    // M2: update the pre-existing pending row from /api/scan/run.
+    const { data, error } = await supabase
+      .from('pipeline')
+      .update(pipelineFields)
+      .eq('id', pendingPipelineId)
+      .eq('user_id', user.id)
+      .select('id')
+      .single();
+    if (error) return jsonError(500, `Failed to update pipeline entry: ${error.message}`);
+    pipelineRow = data;
+  } else {
+    const { data, error: pipeErr } = await supabase
+      .from('pipeline')
+      .insert(pipelineFields)
+      .select('id')
+      .single();
+    if (pipeErr) return jsonError(500, `Failed to save pipeline entry: ${pipeErr.message}`);
+    pipelineRow = data;
+  }
 
   return Response.json({
     pipelineId: pipelineRow.id,
-    listingId: listing.id,
+    listingId,
     score: scoreResult.score,
     title: jd?.title ?? scoreResult.title,
     company: jd?.company ?? scoreResult.company,

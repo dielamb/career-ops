@@ -9,15 +9,19 @@ export default async function SettingsPage() {
 
   let cvText = '';
   let hasApiKey = false;
+  let titleFilter = { positive: [] as string[], negative: [] as string[] };
 
   if (user) {
     const { data } = await supabase
       .from('profiles')
-      .select('cv_text, anthropic_api_key_encrypted')
+      .select('cv_text, anthropic_api_key_encrypted, scoring_prefs')
       .eq('user_id', user.id)
       .single();
     cvText = data?.cv_text ?? '';
     hasApiKey = !!data?.anthropic_api_key_encrypted;
+    const prefs = (data?.scoring_prefs ?? {}) as Record<string, unknown>;
+    const tf = (prefs.title_filter ?? {}) as { positive?: string[]; negative?: string[] };
+    titleFilter = { positive: tf.positive ?? [], negative: tf.negative ?? [] };
   }
 
   return (
@@ -34,7 +38,7 @@ export default async function SettingsPage() {
         </p>
       </header>
 
-      <SettingsForm initialCv={cvText} hasApiKey={hasApiKey} />
+      <SettingsForm initialCv={cvText} hasApiKey={hasApiKey} initialTitleFilter={titleFilter} />
     </div>
   );
 }

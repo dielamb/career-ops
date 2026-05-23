@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { fadeUp } from '@/lib/motion-presets';
 
@@ -40,9 +41,49 @@ const DIMENSION_LABELS: Record<string, string> = {
 };
 
 export function PipelineDetailModal({ id, onClose }: Props) {
+  const router = useRouter();
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [evaluating, setEvaluating] = useState(false);
+  const [evalError, setEvalError] = useState<string | null>(null);
+
+  const reload = () => {
+    setLoading(true);
+    setLoadError(null);
+    fetch(`/api/pipeline/${encodeURIComponent(id)}`)
+      .then(async (res) => {
+        if (!res.ok) { setLoadError(`Failed to load (${res.status})`); return; }
+        setData(await res.json() as ApiResponse);
+      })
+      .catch((e) => setLoadError(e instanceof Error ? e.message : 'Network error'))
+      .finally(() => setLoading(false));
+  };
+
+  const evaluateNow = async () => {
+    if (!data?.pipeline?.url || evaluating) return;
+    setEvaluating(true);
+    setEvalError(null);
+    try {
+      const res = await fetch('/api/intake', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url: data.pipeline.url }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setEvalError(body.error ?? `Failed (${res.status})`);
+        return;
+      }
+      reload();
+      router.refresh();
+      window.dispatchEvent(new CustomEvent('careerops:eval-completed'));
+    } catch (e) {
+      setEvalError(e instanceof Error ? e.message : 'Network error');
+    } finally {
+      setEvaluating(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -118,6 +159,30 @@ export function PipelineDetailModal({ id, onClose }: Props) {
           {loadError && (
             <div className="bg-magenta/15 border-[2px] border-magenta p-sm font-mono text-xs">
               {loadError}
+            </div>
+          )}
+
+          {pipeline && pipeline.status === 'pending' && (
+            <div className="bg-cyber/15 border-[2px] border-cyber p-sm flex flex-col gap-sm">
+              <p className="font-mono text-xs uppercase tracking-wider text-ink">
+                // not evaluated yet
+              </p>
+              <p className="font-body text-sm text-ink-soft">
+                This listing was discovered by a portal scan but has not been
+                scored against your CV. Run the Claude evaluation now to get a
+                fit score and gap analysis.
+              </p>
+              <button
+                type="button"
+                onClick={evaluateNow}
+                disabled={evaluating}
+                className="self-start bg-acid text-ink border-[2.5px] border-ink shadow-[3px_3px_0_var(--color-ink)] font-mono text-xs uppercase tracking-wider px-md py-sm rounded-none disabled:opacity-50"
+              >
+                {evaluating ? '[Evaluating…]' : '[Evaluate now]'}
+              </button>
+              {evalError && (
+                <p className="font-mono text-xs text-magenta">{evalError}</p>
+              )}
             </div>
           )}
 
