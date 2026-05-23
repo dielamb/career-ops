@@ -43,6 +43,34 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Phase 0 safety: routes that still read from the local filesystem (the
+  // admin's career-ops MD/PDF working dir) are gated to admin emails until
+  // per-user data flow ships. Without this, every signed-in user sees the
+  // admin's personal pipeline / reports / PDFs.
+  const FS_BACKED_PREFIXES = [
+    '/reports',
+    '/api/file',
+    '/api/listing',
+    '/api/pipeline/sync',
+    '/api/scans',
+    '/api/actions',
+  ];
+  const isFsBacked = FS_BACKED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  if (isFsBacked) {
+    const adminEmails = (process.env.ADMIN_EMAILS ?? 'maciejkamichal@gmail.com')
+      .split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+    const isUserAdmin = !!user?.email && adminEmails.includes(user.email.toLowerCase());
+    if (!isUserAdmin) {
+      if (isApiRoute) {
+        return NextResponse.json({ error: 'Beta feature — coming soon' }, { status: 403 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      url.searchParams.set('beta', '1');
+      return NextResponse.redirect(url);
+    }
+  }
+
   // MUST return supabaseResponse — not a new NextResponse
   return supabaseResponse;
 }
