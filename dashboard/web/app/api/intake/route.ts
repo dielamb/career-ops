@@ -90,10 +90,11 @@ export async function POST(req: Request) {
   const limit = hasApiKey ? Infinity : (isPro ? 100 : 5);
 
   // Atomic gate — single RPC call, no read-then-update race.
-  // Skip the gate entirely for BYOK users (they pay for their own usage).
+  // BYOK users still get the increment (informational counter) but never blocked.
   let currentCount = 0;
-  if (!hasApiKey) {
-    const { data: newCount, error: rpcErr } = await supabase.rpc('increment_eval_count', { p_user_id: user.id, p_limit: Number.isFinite(limit) ? limit : 2147483647 });
+  {
+    const effectiveLimit = hasApiKey ? 2147483647 : (Number.isFinite(limit) ? limit : 2147483647);
+    const { data: newCount, error: rpcErr } = await supabase.rpc('increment_eval_count', { p_user_id: user.id, p_limit: effectiveLimit });
 
     if (rpcErr) {
       return jsonError(500, `Failed to check eval limit: ${rpcErr.message}`);

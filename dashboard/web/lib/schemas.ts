@@ -36,6 +36,12 @@ export interface EnrichedPipelineEntry extends PipelineEntry {
   evalDate: string | null;   // applications.md date
   appNotes: string | null;   // applications.md notes (1-line decision rationale)
   firstSeen: string | null;  // scan-history.tsv first_seen
+  // Supabase row id (uuid). Used by PipelineTable.deriveId so rows clicked in
+  // the table open the in-dashboard modal instead of a new browser tab.
+  id?: string | null;
+  dbStatus?: string | null;
+  dimensionScores?: unknown;
+  gapAnalysis?: string | null;
 }
 
 // ── Report (reports/NNN-slug-YYYY-MM-DD.md) ─────────────────────

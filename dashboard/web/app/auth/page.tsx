@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -17,6 +17,20 @@ export default function AuthPage() {
   const shouldReduceMotion = useReducedMotion();
   const motion1 = shouldReduceMotion ? {} : pixelBootUp;
   const motionFade = shouldReduceMotion ? {} : fadeUp;
+
+  // Surface auth-callback errors (e.g. exchange_failed, missing_code) as toasts
+  // and strip them from the URL so a refresh doesn't re-show the same error.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('error');
+    if (!err) return;
+    const desc = params.get('error_description');
+    showToast(desc ? `${err}: ${desc}` : `Auth error: ${err}`, 'error');
+    const url = new URL(window.location.href);
+    url.searchParams.delete('error');
+    url.searchParams.delete('error_description');
+    window.history.replaceState({}, '', url.toString());
+  }, [showToast]);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();

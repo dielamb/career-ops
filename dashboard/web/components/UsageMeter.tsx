@@ -5,8 +5,9 @@ import Link from 'next/link';
 interface BillingStatus {
   isPro: boolean;
   evalCount: number;
-  evalsRemaining: number;
-  freeLimit: number;
+  evalsRemaining: number | null;
+  limit: number | null;
+  hasApiKey: boolean;
 }
 
 export function UsageMeter() {
@@ -21,23 +22,34 @@ export function UsageMeter() {
 
   if (!status) return null;
 
-  if (status.isPro) {
+  // BYOK (own Anthropic key) = unlimited evals, but show the running count.
+  if (status.hasApiKey) {
     return (
-      <div className="px-sm py-xs bg-cyber border-[2px] border-ink shadow-[3px_3px_0_var(--color-ink)]">
-        <p className="font-mono text-xs text-ink font-semibold uppercase tracking-wider">// Pro Plan</p>
-        <p className="font-mono text-xs text-ink">Unlimited evals</p>
+      <div className="px-sm py-xs bg-acid border-[2px] border-ink shadow-[3px_3px_0_var(--color-ink)]">
+        <p className="font-mono text-xs text-ink font-semibold uppercase tracking-wider">// BYOK</p>
+        <p className="font-mono text-xs text-ink">{status.evalCount} evals · unlimited</p>
       </div>
     );
   }
 
-  const pct = (status.evalCount / status.freeLimit) * 100;
-  const warn = status.evalCount >= 8;
+  if (status.isPro) {
+    return (
+      <div className="px-sm py-xs bg-cyber border-[2px] border-ink shadow-[3px_3px_0_var(--color-ink)]">
+        <p className="font-mono text-xs text-ink font-semibold uppercase tracking-wider">// Pro Plan</p>
+        <p className="font-mono text-xs text-ink">{status.evalCount}/{status.limit ?? '∞'} evals</p>
+      </div>
+    );
+  }
+
+  const limit = status.limit ?? 0;
+  const pct = limit > 0 ? Math.min(100, (status.evalCount / limit) * 100) : 0;
+  const warn = limit > 0 && status.evalCount >= Math.max(1, limit - 1);
 
   return (
     <div className="flex flex-col gap-xs">
       <div className="flex items-center justify-between">
         <p className="font-mono text-xs text-ink-muted uppercase tracking-wider">
-          // {status.evalCount}/{status.freeLimit} evals
+          // {status.evalCount}/{limit} evals
         </p>
         {warn && (
           <Link
