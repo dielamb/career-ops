@@ -19,15 +19,6 @@ export async function POST(req: Request) {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) return jsonError(401, 'Unauthorized');
 
-  // Phase 0: Pro checkout disabled until per-user data flow ships.
-  // Admin emails (comma-separated, lowercased) bypass for testing.
-  const adminEmails = (process.env.ADMIN_EMAILS ?? 'maciejkamichal@gmail.com')
-    .split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
-  const isUserAdmin = !!user.email && adminEmails.includes(user.email.toLowerCase());
-  if (!isUserAdmin) {
-    return jsonError(403, 'Pro plan is in private beta. Invite-only until per-user data shipping.');
-  }
-
   const priceId = process.env.STRIPE_PRO_PRICE_ID;
   if (!priceId) return jsonError(500, 'STRIPE_PRO_PRICE_ID not configured');
 
